@@ -13,7 +13,7 @@
       "id": "bug-diagnosis",
       "tags": ["debugging", "instruction-following"],
       "prompt": "A loop runs `for (let i = 0; i <= items.length; i++) { console.log(items[i].name); }`. Return exactly two lines: first line is the bug, second line is the fix. Do not include a code fence.",
-      "grader": { "type": "all", "graders": [{ "type": "contains", "values": ["<=", "<", "out of bounds"] }, { "type": "regex", "pattern": "fix|change|replace", "flags": "i" }] }
+      "grader": { "type": "regex", "pattern": "(?:<=|one iteration|out of bounds|undefined).*(?:<\\s*items\\.length|less than|replace)", "flags": "is" }
     },
     {
       "id": "api-contract",

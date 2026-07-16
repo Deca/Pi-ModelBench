@@ -1,6 +1,6 @@
 import type { BenchmarkResult, ModelSummary } from "./types.js";
 
-const percent = (value: number | undefined) => `${((value ?? 0) * 100).toFixed(1)}%`;
+const percent = (value: number | null | undefined) => value == null ? "N/A" : `${(value * 100).toFixed(1)}%`;
 const number = (value: number | undefined) => (value ?? 0).toFixed(1);
 const money = (value: number | undefined) => `$${(value ?? 0).toFixed(6)}`;
 
@@ -25,20 +25,19 @@ function summaryRows(summaries: BenchmarkResult["models"]): string[][] {
     percent(summary.consistencyRate),
     `${number(summary.meanLatencyMs)}/${number(summary.p95LatencyMs)}`,
     number(summary.meanOutputTokensPerSecond),
-    money(summary.totalCost),
-    money(summary.costPerSuccessfulAttempt),
     percent(summary.errorRate),
   ]);
 }
 
-export function renderComparisonTable(summaries: BenchmarkResult["models"]): string {
-  const headers = ["Cfg", "Pass", "Score", "Stable", "Mean/P95 ms", "Out tok/s", "Cost", "$/pass", "Errors"];
+export function renderComparisonTable(summaries: BenchmarkResult["models"], totalCost?: number): string {
+  const headers = ["Cfg", "Pass", "Score", "Stable", "Mean/P95 ms", "Out tok/s", "Errors"];
   const rows = summaryRows(summaries);
   const widths = headers.map((header, column) => Math.max(header.length, ...rows.map((row) => row[column]?.length ?? 0)));
   const formatRow = (row: string[]) => `| ${row.map((value, column) => value.padEnd(widths[column] ?? value.length)).join(" | ")} |`;
   const separator = `|-${widths.map((width) => "-".repeat(width)).join("-+-")}-|`;
   const legend = summaries.map((summary, index) => `C${index + 1}: ${configurationLabel(summary)}`);
-  return [formatRow(headers), separator, ...rows.map(formatRow), "", ...legend].join("\n");
+  const calculatedTotal = totalCost ?? summaries.reduce((sum, summary) => sum + (summary.totalCost ?? 0), 0);
+  return [formatRow(headers), separator, ...rows.map(formatRow), `Total bench cost: ${money(calculatedTotal)}`, "", ...legend].join("\n");
 }
 
 function htmlSummaryTable(result: BenchmarkResult): string {
@@ -50,12 +49,10 @@ function htmlSummaryTable(result: BenchmarkResult): string {
     <td>${percent(summary.consistencyRate)}</td>
     <td>${number(summary.meanLatencyMs)} / ${number(summary.p95LatencyMs)} ms</td>
     <td>${number(summary.meanOutputTokensPerSecond)}</td>
-    <td>${money(summary.totalCost)}</td>
-    <td>${money(summary.costPerSuccessfulAttempt)}</td>
     <td>${percent(summary.errorRate)}</td>
   </tr>`).join("\n");
   return `<table>
-    <thead><tr><th>Cfg</th><th>Configuration</th><th>Pass rate</th><th>Score</th><th>Stability</th><th>Mean / P95 latency</th><th>Output tok/s</th><th>Total cost</th><th>Cost / pass</th><th>Errors</th></tr></thead>
+    <thead><tr><th>Cfg</th><th>Configuration</th><th>Pass rate</th><th>Score</th><th>Stability</th><th>Mean / P95 latency</th><th>Output tok/s</th><th>Errors</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
 }
@@ -68,12 +65,11 @@ function htmlTaskTable(result: BenchmarkResult): string {
     <td>${percent(task.passRate)}</td>
     <td>${number(task.meanScore)}</td>
     <td>${number(task.meanLatencyMs)} / ${number(task.p95LatencyMs)} ms</td>
-    <td>${money(task.totalCost)}</td>
     <td>${percent(task.errorRate)}</td>
   </tr>`)).join("\n");
   return `<table>
-    <thead><tr><th>Cfg</th><th>Task</th><th>Tags</th><th>Pass rate</th><th>Score</th><th>Mean / P95 latency</th><th>Cost</th><th>Errors</th></tr></thead>
-    <tbody>${rows || `<tr><td colspan="8">Task summaries are unavailable in this older run artifact.</td></tr>`}</tbody>
+    <thead><tr><th>Cfg</th><th>Task</th><th>Tags</th><th>Pass rate</th><th>Score</th><th>Mean / P95 latency</th><th>Errors</th></tr></thead>
+    <tbody>${rows || `<tr><td colspan="7">Task summaries are unavailable in this older run artifact.</td></tr>`}</tbody>
   </table>`;
 }
 
@@ -84,7 +80,6 @@ function htmlAttempts(result: BenchmarkResult): string {
       <dt>Grade</dt><dd>${number(record.grade.score)} — ${escapeHtml(record.grade.details)}</dd>
       <dt>Latency</dt><dd>${number(record.latencyMs)} ms</dd>
       <dt>Tokens</dt><dd>${record.usage.input} input / ${record.usage.output} output</dd>
-      <dt>Cost</dt><dd>${money(record.usage.cost.total)}</dd>
       ${record.error ? `<dt>Error</dt><dd class="error">${escapeHtml(record.error)}</dd>` : ""}
     </dl>
     <h4>Prompt</h4><pre>${escapeHtml(record.prompt)}</pre>
@@ -116,8 +111,8 @@ table { width:100%; border-collapse:collapse; min-width:850px; } th,td { text-al
 <p>${escapeHtml(result.profile.description)}</p>
 <div class="meta"><strong>Run:</strong> ${escapeHtml(result.runId)}<br><strong>Started:</strong> ${escapeHtml(result.startedAt)}<br><strong>Finished:</strong> ${escapeHtml(result.finishedAt)}<br><strong>Attempts:</strong> ${result.records.length}</div>
 <h2>Configuration comparison</h2>
-<div class="panel">${htmlSummaryTable(result)}</div>
-<p class="note">Pass rate and score measure graded task quality. Stability is the share of tasks whose repeated attempts agreed. Output tok/s, latency, cost, and cost/pass measure efficiency.</p>
+<div class="panel"><p class="total-cost"><strong>Total bench cost:</strong> ${money(result.totalCost ?? result.models.reduce((sum, model) => sum + (model.totalCost ?? 0), 0))}</p>${htmlSummaryTable(result)}</div>
+<p class="note">Pass rate and score measure graded task quality. Stability is the share of tasks whose repeated attempts agreed (N/A when tasks were run once). Output tok/s and latency measure efficiency; the benchmark total cost is shown above.</p>
 <h2>Per-task capability and precision</h2>
 <div class="panel">${htmlTaskTable(result)}</div>
 <h2>Method</h2>

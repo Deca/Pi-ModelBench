@@ -23,7 +23,7 @@ export function summarizeRecords(records: RunRecord[]): MetricSummary {
       totalOutputTokens: 0,
       totalCost: 0,
       costPerSuccessfulAttempt: 0,
-      consistencyRate: 0,
+      consistencyRate: null,
       errorRate: 0,
     };
   }
@@ -36,7 +36,8 @@ export function summarizeRecords(records: RunRecord[]): MetricSummary {
     group.push(record);
     taskGroups.set(record.taskId, group);
   }
-  const consistentTasks = [...taskGroups.values()].filter((group) => group.every((record) => record.grade.passed === group[0]?.grade.passed)).length;
+  const repeatedTaskGroups = [...taskGroups.values()].filter((group) => group.length > 1);
+  const consistentTasks = repeatedTaskGroups.filter((group) => group.every((record) => record.grade.passed === group[0]?.grade.passed)).length;
 
   return {
     count: records.length,
@@ -52,7 +53,7 @@ export function summarizeRecords(records: RunRecord[]): MetricSummary {
     totalOutputTokens: total((record) => record.usage.output),
     totalCost: total((record) => record.usage.cost.total),
     costPerSuccessfulAttempt: passedCount > 0 ? total((record) => record.usage.cost.total) / passedCount : 0,
-    consistencyRate: taskGroups.size > 0 ? consistentTasks / taskGroups.size : 0,
+    consistencyRate: repeatedTaskGroups.length > 0 ? consistentTasks / repeatedTaskGroups.length : null,
     errorRate: total((record) => record.error ? 1 : 0) / records.length,
   };
 }

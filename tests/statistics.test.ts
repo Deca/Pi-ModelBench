@@ -28,5 +28,10 @@ describe("summarizeRecords", () => {
     expect(summary.p50LatencyMs).toBe(20);
     expect(summary.p95LatencyMs).toBe(30);
     expect(summary.totalCost).toBeCloseTo(0.06);
+    expect(summary.consistencyRate).toBe(0);
+  });
+
+  it("reports stability as unavailable when tasks run once", () => {
+    expect(summarizeRecords([record(10, true)]).consistencyRate).toBeNull();
   });
 });

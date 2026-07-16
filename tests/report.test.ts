@@ -9,6 +9,7 @@ const result: BenchmarkResult = {
   finishedAt: "2026-01-01T00:00:01.000Z",
   profile: { name: "test", description: "Test profile" },
   settings: { runs: 1, temperature: 0, maxTokens: 100, reasoning: "off" },
+  totalCost: 0.01,
   models: [{
     model: { provider: "fake", id: "model", api: "fake", name: "Fake", contextWindow: 1000, maxTokens: 100, cost: { input: 1, output: 1, cacheRead: 0, cacheWrite: 0 } },
     settings: { runs: 1, temperature: 0, maxTokens: 100, reasoning: "off" },

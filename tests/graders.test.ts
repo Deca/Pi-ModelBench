@@ -14,4 +14,14 @@ describe("gradeOutput", () => {
       details: "Normalized output matched the expected value",
     });
   });
+
+  it("accepts semantically correct debugging explanations without one required phrase", () => {
+    const result = gradeOutput("Bug: i <= items.length accesses an undefined item. Fix: use i < items.length.", {
+      type: "regex",
+      pattern: "(?:<=|one iteration|out of bounds|undefined).*(?:<\\s*items\\.length|less than|replace)",
+      flags: "is",
+    });
+
+    expect(result.passed).toBe(true);
+  });
 });

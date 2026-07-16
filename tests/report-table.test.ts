@@ -32,5 +32,6 @@ describe("renderComparisonTable", () => {
     expect(table).toContain("100.0%");
     expect(table).toContain("Mean/P95 ms");
     expect(table).toContain("Out tok/s");
+    expect(table).toContain("Total bench cost");
   });
 });

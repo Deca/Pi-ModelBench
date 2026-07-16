@@ -92,7 +92,7 @@ export interface MetricSummary {
   totalOutputTokens: number;
   totalCost: number;
   costPerSuccessfulAttempt: number;
-  consistencyRate: number;
+  consistencyRate: number | null;
   errorRate: number;
 }
 
@@ -114,6 +114,7 @@ export interface BenchmarkResult {
   finishedAt: string;
   profile: Pick<BenchmarkProfile, "name" | "description">;
   settings: BenchmarkProfile["defaults"];
+  totalCost: number;
   models: ModelSummary[];
   records: RunRecord[];
 }

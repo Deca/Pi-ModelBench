@@ -94,7 +94,7 @@ function formatSummary(result: Awaited<ReturnType<typeof runBenchmark>>): string
     `${summary.model.provider}/${summary.model.id} [thinking:${summary.settings?.reasoning ?? "unknown"}]`,
     `pass ${(summary.passRate * 100).toFixed(1)}%`,
     `score ${summary.meanScore.toFixed(2)}`,
-    `stable ${((summary.consistencyRate ?? 0) * 100).toFixed(1)}%`,
+    `stable ${summary.consistencyRate == null ? "N/A" : `${(summary.consistencyRate * 100).toFixed(1)}%`}`,
     `latency ${summary.meanLatencyMs.toFixed(0)}/${summary.p95LatencyMs.toFixed(0)}ms`,
     `output ${((summary.meanOutputTokensPerSecond ?? 0)).toFixed(1)} tok/s`,
     `cost ${summary.totalCost.toFixed(6)}`,
@@ -164,7 +164,7 @@ export default function modelbenchExtension(pi: ExtensionAPI) {
             appendReportEntry(pi, {
               title: `Benchmark ${result.profile.name}`,
               runId: result.runId,
-              summary: renderComparisonTable(result.models),
+              summary: renderComparisonTable(result.models, result.totalCost),
               jsonPath: path,
               htmlPath,
             });
@@ -213,7 +213,7 @@ export default function modelbenchExtension(pi: ExtensionAPI) {
           appendReportEntry(pi, {
             title: `Benchmark ${effectiveProfile.name}`,
             runId: result.runId,
-            summary: renderComparisonTable(result.models),
+            summary: renderComparisonTable(result.models, result.totalCost),
             jsonPath: paths.jsonPath,
             htmlPath: paths.htmlPath,
           });

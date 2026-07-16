@@ -56,6 +56,7 @@ export async function runBenchmark(
     finishedAt: new Date().toISOString(),
     profile: { name: profile.name, description: profile.description },
     settings: profile.defaults,
+    totalCost: records.reduce((sum, record) => sum + record.usage.cost.total, 0),
     models: summaries,
     records,
   };
