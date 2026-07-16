@@ -267,6 +267,10 @@ Each completed run writes two files to:
 - `<run-id>.json` — complete machine-readable result, including every prompt, output, grade, usage record, timing measurement, error, and model snapshot;
 - `<run-id>.md` — human-readable comparison report.
 
+The run ID is printed in the completion message and shown in the result entry added to Pi's main transcript. Use that ID with `/benchmark report <run-id>`.
+
+In interactive Pi mode, the benchmark summary is printed directly in the main transcript. The saved JSON and Markdown files contain the detailed per-task and per-attempt results.
+
 Reports include:
 
 - pass rate;
