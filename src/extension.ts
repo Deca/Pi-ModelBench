@@ -6,6 +6,7 @@ import { runBenchmark } from "./core/benchmark.js";
 import { loadProfiles } from "./core/profiles.js";
 import { PiModelRunner } from "./core/pi-runner.js";
 import { renderMarkdown } from "./core/report.js";
+import { ReportViewer } from "./ui/report-viewer.js";
 import type { BenchmarkProfile, ThinkingLevel } from "./core/types.js";
 
 interface ParsedArgs {
@@ -84,11 +85,18 @@ function formatSummary(result: Awaited<ReturnType<typeof runBenchmark>>): string
   return result.models.map((summary) => `${summary.model.provider}/${summary.model.id} [thinking:${summary.settings?.reasoning ?? "unknown"}]: ${(summary.passRate * 100).toFixed(1)}% pass, ${summary.meanLatencyMs.toFixed(0)}ms mean, $${summary.totalCost.toFixed(6)}`).join("\n");
 }
 
+async function showReadOnly(ctx: ExtensionContext, title: string, content: string): Promise<void> {
+  if (ctx.mode !== "tui") {
+    ctx.ui.notify(content, "info");
+    return;
+  }
+  await ctx.ui.custom<void>((tui, _theme, _keybindings, done) => new ReportViewer(title, content, () => tui.requestRender(), done));
+}
+
 async function showModels(ctx: ExtensionContext, availableOnly: boolean): Promise<void> {
   const list = availableOnly ? ctx.modelRegistry.getAvailable() : ctx.modelRegistry.getAll();
   const text = list.length === 0 ? "No models registered." : list.map((model) => `${model.provider}/${model.id} — ${model.name}${ctx.modelRegistry.hasConfiguredAuth(model) ? " [auth]" : ""}`).join("\n");
-  if (ctx.mode === "tui") await ctx.ui.editor("Registered models", text);
-  else ctx.ui.notify(text, "info");
+  await showReadOnly(ctx, "Registered models", text);
 }
 
 export default function modelbenchExtension(pi: ExtensionAPI) {
@@ -98,8 +106,7 @@ export default function modelbenchExtension(pi: ExtensionAPI) {
       const args = parseArgs(rawArgs);
       const profiles = loadProfiles(ctx.cwd);
       if (args.command === "help") {
-        if (ctx.mode === "tui") await ctx.ui.editor("Pi ModelBench", usage());
-        else ctx.ui.notify(usage(), "info");
+        await showReadOnly(ctx, "Pi ModelBench", usage());
         return;
       }
       if (args.command === "profiles") {
@@ -120,7 +127,7 @@ export default function modelbenchExtension(pi: ExtensionAPI) {
         const path = existsSync(id) ? resolve(id) : join(ctx.cwd, ".pi", "modelbench", "runs", id.endsWith(".json") ? id : `${id}.json`);
         try {
           const result = JSON.parse(await readFile(path, "utf8")) as Awaited<ReturnType<typeof runBenchmark>>;
-          if (ctx.mode === "tui") await ctx.ui.editor(`Benchmark ${result.runId}`, renderMarkdown(result));
+          if (ctx.mode === "tui") await showReadOnly(ctx, `Benchmark ${result.runId}`, renderMarkdown(result));
           else ctx.ui.notify(formatSummary(result), "info");
         } catch (error) {
           ctx.ui.notify(`Could not read benchmark report: ${error instanceof Error ? error.message : String(error)}`, "error");
@@ -161,7 +168,7 @@ export default function modelbenchExtension(pi: ExtensionAPI) {
         });
         const paths = await saveResult(ctx.cwd, result);
         const format = args.values.get("format") ?? "markdown";
-        if (ctx.mode === "tui" && format !== "json") await ctx.ui.editor(`Benchmark ${result.runId}`, renderMarkdown(result));
+        if (ctx.mode === "tui" && format !== "json") await showReadOnly(ctx, `Benchmark ${result.runId}`, renderMarkdown(result));
         ctx.ui.notify(`Benchmark complete: ${result.runId}\n${formatSummary(result)}\nSaved: ${paths.jsonPath}\n${format === "json" ? paths.jsonPath : paths.markdownPath}`, "info");
       } catch (error) {
         ctx.ui.notify(`Benchmark failed: ${error instanceof Error ? error.message : String(error)}`, "error");
