@@ -21,9 +21,10 @@ describe("renderComparisonTable", () => {
   it("renders an aligned text table for plain CLI output", () => {
     const table = renderComparisonTable([summary]);
 
-    expect(table).toContain("Model");
-    expect(table).toContain("fake/model");
-    expect(table).toContain("+" );
-    expect(table).not.toContain("| Model |");
+    expect(table).toContain("Configuration: fake/model");
+    expect(table).toContain("Thinking: off");
+    expect(table).toContain("Pass: 100.0%");
+    expect(table).toContain("P95 latency: 10.0 ms");
+    expect(table).not.toContain("| Pass |");
   });
 });

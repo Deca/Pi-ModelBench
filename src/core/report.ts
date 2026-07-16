@@ -13,24 +13,16 @@ function comparisonTable(result: BenchmarkResult): string {
 }
 
 export function renderComparisonTable(summaries: BenchmarkResult["models"]): string {
-  const rows = [
-    ["Model", "Pass", "Score", "Mean ms", "P95 ms", "In tok", "Out tok", "Cost", "Errors"],
-    ...summaries.map((summary) => [
-      configurationLabel(summary),
-      percent(summary.passRate),
-      number(summary.meanScore),
-      number(summary.meanLatencyMs),
-      number(summary.p95LatencyMs),
-      number(summary.meanInputTokens),
-      number(summary.meanOutputTokens),
-      `$${summary.totalCost.toFixed(6)}`,
-      percent(summary.errorRate),
-    ]),
-  ];
-  const widths = rows[0]?.map((_, column) => Math.max(...rows.map((row) => row[column]?.length ?? 0))) ?? [];
-  const border = `+-${widths.join("-+-")}-+`;
-  const formatRow = (row: string[], header = false) => `| ${row.map((value, column) => header || column === 0 ? value.padEnd(widths[column] ?? value.length) : value.padStart(widths[column] ?? value.length)).join(" | ")} |`;
-  return [border, formatRow(rows[0] ?? [], true), border, ...rows.slice(1).map((row) => formatRow(row)), border].join("\n");
+  return summaries.map((summary, index) => {
+    const settings = summary.settings;
+    const configuration = `Configuration: ${summary.model.provider}/${summary.model.id}`;
+    const controls = `Thinking: ${settings?.reasoning ?? "unknown"} | Temperature: ${settings?.temperature ?? "?"} | Max tokens: ${settings?.maxTokens ?? "?"}`;
+    const quality = `Pass: ${percent(summary.passRate)} | Score: ${number(summary.meanScore)}`;
+    const latency = `Mean latency: ${number(summary.meanLatencyMs)} ms | P95 latency: ${number(summary.p95LatencyMs)} ms`;
+    const usage = `Input tokens: ${number(summary.meanInputTokens)} | Output tokens: ${number(summary.meanOutputTokens)}`;
+    const economics = `Cost: $${summary.totalCost.toFixed(6)} | Errors: ${percent(summary.errorRate)}`;
+    return `${index > 0 ? "\n" : ""}${configuration}\n${controls}\n${quality}\n${latency}\n${usage}\n${economics}`;
+  }).join("\n");
 }
 
 export function renderMarkdown(result: BenchmarkResult): string {
