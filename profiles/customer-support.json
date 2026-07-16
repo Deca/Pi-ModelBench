@@ -1,0 +1,19 @@
+{
+  "name": "customer-support",
+  "description": "Support responses evaluated for required facts, safe scope, and concise communication.",
+  "defaults": { "runs": 3, "temperature": 0, "maxTokens": 384, "reasoning": "low" },
+  "tasks": [
+    {
+      "id": "refund-policy",
+      "tags": ["policy", "accuracy"],
+      "prompt": "A customer asks for a refund 10 days after purchase. Policy: refunds are available within 30 days for unused products. Reply in two sentences or fewer, mention the 30-day window, and ask whether the product is unused.",
+      "grader": { "type": "all", "graders": [{ "type": "contains", "values": ["30", "unused"] }, { "type": "regex", "pattern": "refund|eligible|qualif", "flags": "i" }] }
+    },
+    {
+      "id": "missing-information",
+      "tags": ["clarification"],
+      "prompt": "A customer says only: `I need help with my order.` Ask one concise follow-up question that requests the order number.",
+      "grader": { "type": "all", "graders": [{ "type": "contains", "values": ["order number"] }, { "type": "regex", "pattern": "\\?" }] }
+    }
+  ]
+}

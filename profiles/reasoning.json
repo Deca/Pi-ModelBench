@@ -1,0 +1,25 @@
+{
+  "name": "reasoning",
+  "description": "Short problems with independently checkable answers, useful for comparing reasoning effort against latency and cost.",
+  "defaults": { "runs": 3, "temperature": 0, "maxTokens": 512, "reasoning": "medium" },
+  "tasks": [
+    {
+      "id": "arithmetic",
+      "tags": ["math", "exactness"],
+      "prompt": "Return only the integer answer: 37 * 19 - 42.",
+      "grader": { "type": "number", "expected": 661, "tolerance": 0 }
+    },
+    {
+      "id": "logic",
+      "tags": ["logic", "exactness"],
+      "prompt": "Three boxes are labeled apples, oranges, and mixed. Every label is wrong. You may draw one fruit from one box. Which labeled box should you draw from? Return only its current label.",
+      "grader": { "type": "normalized-exact", "expected": "mixed" }
+    },
+    {
+      "id": "constraint-satisfaction",
+      "tags": ["planning"],
+      "prompt": "Return JSON only: schedule two non-overlapping tasks A and B into slots 1 and 2, with A before B. Use exactly this shape: {\"A\":1,\"B\":2}.",
+      "grader": { "type": "json-exact", "expected": { "A": 1, "B": 2 } }
+    }
+  ]
+}

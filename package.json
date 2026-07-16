@@ -1,0 +1,42 @@
+{
+  "name": "pi-modelbench",
+  "version": "0.1.0",
+  "description": "Deterministic-first model benchmarking for the Pi coding agent",
+  "type": "module",
+  "private": true,
+  "keywords": [
+    "pi-package",
+    "llm",
+    "benchmark",
+    "evals"
+  ],
+  "files": [
+    "src",
+    "profiles",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "pi": {
+    "extensions": [
+      "./src/extension.ts"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "^0.80.7",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

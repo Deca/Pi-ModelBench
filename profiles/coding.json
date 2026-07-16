@@ -1,0 +1,31 @@
+{
+  "name": "coding",
+  "description": "Small, tool-free software-engineering tasks focused on instruction following, correctness, and concise technical communication.",
+  "defaults": { "runs": 3, "temperature": 0, "maxTokens": 512, "reasoning": "low" },
+  "tasks": [
+    {
+      "id": "complexity",
+      "tags": ["algorithms", "exactness"],
+      "prompt": "What is the time complexity of binary search over a sorted array of n items? Return only the Big-O expression.",
+      "grader": { "type": "normalized-exact", "expected": "O(log n)" }
+    },
+    {
+      "id": "bug-diagnosis",
+      "tags": ["debugging", "instruction-following"],
+      "prompt": "A loop runs `for (let i = 0; i <= items.length; i++) { console.log(items[i].name); }`. Return exactly two lines: first line is the bug, second line is the fix. Do not include a code fence.",
+      "grader": { "type": "all", "graders": [{ "type": "contains", "values": ["<=", "<", "out of bounds"] }, { "type": "regex", "pattern": "fix|change|replace", "flags": "i" }] }
+    },
+    {
+      "id": "api-contract",
+      "tags": ["structured-output", "design"],
+      "prompt": "Return JSON only, with exactly these string fields: `method` must be `GET`, `path` must be `/users/{id}`, and `auth` must be `bearer`.",
+      "grader": { "type": "json-exact", "expected": { "method": "GET", "path": "/users/{id}", "auth": "bearer" } }
+    },
+    {
+      "id": "scope-control",
+      "tags": ["instruction-following"],
+      "prompt": "Explain in one sentence why a unit test should not depend on the system clock. Your answer must contain the words `deterministic` and `reliable`.",
+      "grader": { "type": "contains", "values": ["deterministic", "reliable"] }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "writing",
+  "description": "Constrained professional writing tasks. Deterministic checks cover required content; human or judge review is still recommended.",
+  "defaults": { "runs": 3, "temperature": 0.2, "maxTokens": 384, "reasoning": "off" },
+  "tasks": [
+    {
+      "id": "release-note",
+      "tags": ["technical-writing"],
+      "prompt": "Write a concise release note (under 60 words) for a feature that adds CSV export. Mention the benefit to users and that existing workflows remain compatible.",
+      "grader": { "type": "all", "graders": [{ "type": "contains", "values": ["CSV", "export", "compatible"] }, { "type": "regex", "pattern": "users|customers|team", "flags": "i" }] }
+    },
+    {
+      "id": "executive-summary",
+      "tags": ["summarization"],
+      "prompt": "Summarize this incident in two sentences: a database index was missing, API latency increased for 18 minutes, and the index was added. Include the duration and the remediation.",
+      "grader": { "type": "contains", "values": ["18", "index"] }
+    }
+  ]
+}

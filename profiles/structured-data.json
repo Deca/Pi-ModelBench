@@ -1,0 +1,25 @@
+{
+  "name": "structured-data",
+  "description": "Machine-readable extraction and formatting tasks scored without an LLM judge.",
+  "defaults": { "runs": 3, "temperature": 0, "maxTokens": 256, "reasoning": "low" },
+  "tasks": [
+    {
+      "id": "invoice-fields",
+      "tags": ["json", "extraction"],
+      "prompt": "Extract the invoice number and total from this text. Return JSON only with fields invoice and total: Invoice INV-2048, total $125.50.",
+      "grader": { "type": "json-exact", "expected": { "invoice": "INV-2048", "total": 125.5 } }
+    },
+    {
+      "id": "classification",
+      "tags": ["classification"],
+      "prompt": "Classify the message `My package arrived damaged and I want a refund` as exactly one label: billing, delivery, technical, or other. Return only the label.",
+      "grader": { "type": "normalized-exact", "expected": "delivery" }
+    },
+    {
+      "id": "required-schema",
+      "tags": ["schema"],
+      "prompt": "Return JSON only with name set to Ada and language set to Python. Additional fields are allowed.",
+      "grader": { "type": "json-fields", "fields": { "name": "Ada", "language": "Python" } }
+    }
+  ]
+}

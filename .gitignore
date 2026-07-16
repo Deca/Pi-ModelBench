@@ -1,0 +1,5 @@
+.pi/coding-companion/
+node_modules/
+dist/
+coverage/
+*.log
