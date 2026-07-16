@@ -1,66 +1,309 @@
 # Pi ModelBench
 
-Exploratory, deterministic-first model benchmarking as a Pi extension package.
+Pi ModelBench is an exploratory Pi extension for comparing language models against repeatable, usage-oriented benchmark profiles.
 
-ModelBench deliberately reuses Pi's model registry and provider adapters. It does **not** maintain a provider catalog, credentials, or model pricing independently. The selected model metadata is snapshotted into each result so runs remain auditable when providers update their models.
+It helps answer questions such as:
 
-## Install for local development
+- Which model is most reliable for coding tasks?
+- Does a higher reasoning level improve quality enough to justify its cost and latency?
+- Which model gives the best balance of quality, speed, and token usage for a specific sector?
 
-From this repository:
+ModelBench is **not** an academic leaderboard. It evaluates the models and tasks that matter to your workflow.
+
+## Design goals
+
+ModelBench follows a deterministic-first evaluation approach:
+
+- use representative, task-specific prompts instead of generic scores;
+- run the same tasks and settings against every selected model;
+- repeat tasks to expose variability;
+- use deterministic graders wherever possible;
+- measure quality, latency, tokens, cost, and errors together;
+- preserve raw outputs and model metadata for auditability;
+- keep provider integrations in Pi instead of maintaining a second provider catalog.
+
+The package reuses Pi's model registry, authentication, provider adapters, model discovery, and pricing metadata. It does not maintain provider integrations or a separate model catalog.
+
+## Installation
+
+### Run from a local checkout
 
 ```bash
 npm install
 pi -e ./src/extension.ts
 ```
 
-To install as a Pi package after publishing or from Git:
+This loads the extension for the current Pi process. It is useful while developing or experimenting with the package.
+
+### Install as a Pi package
+
+From a local path:
 
 ```bash
-pi install ./path/to/modelBench
-# or
-pi install git:github.com/you/pi-modelbench@main
+pi install ./path/to/pi-modelbench
 ```
+
+From Git:
+
+```bash
+pi install git:github.com/<owner>/pi-modelbench@main
+```
+
+Pi packages can also be installed at project scope with `-l`:
+
+```bash
+pi install -l ./path/to/pi-modelbench
+```
+
+Review extension source before installing packages. Pi extensions run with the permissions of the current user.
+
+## Authentication and model availability
+
+ModelBench uses the credentials already configured for Pi. Configure provider credentials using Pi's normal mechanisms, such as:
+
+- environment variables;
+- Pi's `/login` flow where supported;
+- Pi's stored authentication configuration;
+- custom provider/model configuration supported by Pi.
+
+Inspect registered models with:
+
+```text
+/benchmark models
+```
+
+Show only models with configured authentication:
+
+```text
+/benchmark models --available
+```
+
+Model references use Pi's normal format:
+
+```text
+provider/model
+provider/model:thinking-level
+```
+
+Examples:
+
+```text
+openai/gpt-5.6
+anthropic/claude-sonnet-4-5
+openai/gpt-5.6:high
+```
+
+Provider and model names change frequently. ModelBench resolves references through Pi's current registry at runtime and snapshots the selected metadata in each report.
 
 ## Commands
 
+All commands are entered inside an interactive Pi session after the extension has been loaded.
+
+### Show help
+
+```text
+/benchmark
+```
+
+### List profiles
+
 ```text
 /benchmark profiles
+```
+
+### List models
+
+```text
 /benchmark models
+/benchmark models --available
+```
+
+### Run a benchmark
+
+```text
+/benchmark <profile> --models <model-list> [options]
+```
+
+For example:
+
+```text
 /benchmark coding --models openai/gpt-5.6,anthropic/claude-sonnet-4-5 --runs 3
-/benchmark reasoning --models openai/gpt-5.6:high --format json
+```
+
+If `--models` is omitted, ModelBench benchmarks the model currently selected in Pi:
+
+```text
+/benchmark coding --runs 3
+```
+
+### Compare reasoning levels
+
+A thinking level can be included in a model reference:
+
+```text
+/benchmark reasoning --models openai/gpt-5.6:medium,openai/gpt-5.6:high --runs 3
+```
+
+If all selected model references specify the same thinking level, that level becomes the benchmark setting. You can also set it explicitly with `--thinking`.
+
+### Read a previous report
+
+```text
 /benchmark report <run-id>
 ```
 
-If `--models` is omitted, the currently selected Pi model is used. Runs are sequential by design. JSON and Markdown artifacts are saved to `.pi/modelbench/runs/`.
+The command accepts a run ID, a JSON report path, or a relative path to a report.
+
+## Run options
+
+| Option | Description | Default |
+| --- | --- | --- |
+| `--models <list>` | Comma-separated Pi model references | Current Pi model |
+| `--runs <n>` | Number of attempts per model/task pair | Profile default |
+| `--thinking <level>` | `off`, `minimal`, `low`, `medium`, `high`, `xhigh`, or `max` | Profile default |
+| `--temperature <n>` | Request temperature where supported | Profile default |
+| `--max-tokens <n>` | Maximum output tokens | Profile default |
+| `--format markdown\|json` | Choose the displayed report format | `markdown` |
+
+Runs execute sequentially. This makes ordering, rate-limit behavior, and failures easier to inspect, although it is slower than parallel execution.
 
 ## Included profiles
 
-- `coding` — debugging, API contracts, complexity, and instruction following
-- `reasoning` — independently checkable arithmetic, logic, and constraints
-- `structured-data` — JSON extraction, classification, and required fields
-- `customer-support` — policy accuracy and clarification behavior
-- `writing` — constrained writing with deterministic content checks
+Profiles are JSON files containing benchmark defaults and tasks.
 
-Project-specific profiles can be placed in `.pi/modelbench/profiles/*.json`; they override bundled profiles with the same name.
+### `coding`
 
-## Methodology
+Software-engineering tasks covering:
 
-The MVP follows the evaluation principles from OpenAI's model guidance:
+- algorithmic complexity;
+- debugging diagnosis;
+- API contracts and structured output;
+- instruction following and scope control.
 
-- use representative task-specific cases rather than generic scores;
-- include normal and edge-oriented tasks in profiles;
-- keep prompts and settings identical across models;
-- repeat each task to expose variability;
-- report quality, latency, tokens, cost, and errors together;
-- use deterministic graders first and retain raw outputs for inspection;
-- run sequentially to make ordering, retries, and rate limits auditable.
+### `reasoning`
 
-The current MVP is single-turn and text-only. It does not yet benchmark tool selection, repository changes, executable code patches, multi-turn workflows, vision, or LLM-as-a-judge scoring. Those should be added as separate profile/task types rather than weakening deterministic results.
+Short problems with independently checkable answers, including:
+
+- arithmetic;
+- logic;
+- constraint satisfaction.
+
+### `structured-data`
+
+Machine-readable tasks covering:
+
+- JSON extraction;
+- classification;
+- required fields and schema-like checks.
+
+### `customer-support`
+
+Support tasks covering:
+
+- policy accuracy;
+- required facts;
+- clarification questions;
+- concise responses.
+
+### `writing`
+
+Constrained writing tasks with deterministic checks for required content. These checks are useful signals, but writing quality should also be reviewed by a human or a separate judge.
+
+## Custom profiles
+
+Add project-specific profiles to:
+
+```text
+.pi/modelbench/profiles/*.json
+```
+
+A project profile with the same `name` as a bundled profile overrides the bundled version.
+
+Minimal example:
+
+```json
+{
+  "name": "my-domain",
+  "description": "Tasks representative of my workflow",
+  "defaults": {
+    "runs": 3,
+    "temperature": 0,
+    "maxTokens": 512,
+    "reasoning": "low"
+  },
+  "tasks": [
+    {
+      "id": "classification",
+      "tags": ["domain"],
+      "prompt": "Return exactly one of: low, medium, high. Classify this case: ...",
+      "grader": {
+        "type": "normalized-exact",
+        "expected": "medium"
+      }
+    }
+  ]
+}
+```
+
+Supported deterministic graders:
+
+- `exact` — exact string equality;
+- `normalized-exact` — trims, collapses whitespace, and ignores case;
+- `contains` — requires every listed string;
+- `regex` — regular-expression match;
+- `number` — numeric answer within a tolerance;
+- `json-exact` — parsed JSON must deeply equal the expected value;
+- `json-fields` — selected JSON fields must match;
+- `all` — all nested graders must pass.
+
+## Reports and statistics
+
+Each completed run writes two files to:
+
+```text
+.pi/modelbench/runs/
+```
+
+- `<run-id>.json` — complete machine-readable result, including every prompt, output, grade, usage record, timing measurement, error, and model snapshot;
+- `<run-id>.md` — human-readable comparison report.
+
+Reports include:
+
+- pass rate;
+- mean grade score;
+- mean latency;
+- p50 latency;
+- p95 latency;
+- mean input tokens;
+- mean output tokens;
+- total reported cost;
+- error rate;
+- per-task and per-attempt raw results.
+
+Benchmark outputs may contain sensitive prompts or model responses. Keep `.pi/modelbench/runs/` private when tasks contain confidential information.
+
+## Current limitations
+
+The current MVP benchmarks single-turn text responses only. It does not yet benchmark:
+
+- tool selection or tool arguments;
+- repository changes or executable coding tasks;
+- multi-turn workflows;
+- agent handoffs;
+- images or other multimodal inputs;
+- LLM-as-a-judge or human-review workflows;
+- concurrent execution;
+- statistical confidence intervals or significance testing.
+
+These capabilities should be added as explicit benchmark modes or task types rather than weakening the deterministic single-turn results.
 
 ## Development
 
 ```bash
+npm install
 npm run typecheck
 npm test
 npm run build
 ```
+
+The core engine is kept separate from the Pi command layer so it can later support another adapter, such as a portable CLI or a skill wrapper, without changing profiles, graders, statistics, or report generation.
