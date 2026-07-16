@@ -1,5 +1,5 @@
 import { complete } from "@earendil-works/pi-ai/compat";
-import type { Api, Message, Model } from "@earendil-works/pi-ai";
+import type { Api, Message, Model, ProviderStreamOptions } from "@earendil-works/pi-ai";
 import type { ModelRegistry } from "@earendil-works/pi-coding-agent";
 import { gradeOutput } from "./graders.js";
 import type { BenchmarkProfile, BenchmarkTask, ModelRef, ModelRunner, RunRecord } from "./types.js";
@@ -20,6 +20,26 @@ function textFromContent(content: Array<{ type: string; text?: string }>): strin
   return content.filter((item) => item.type === "text").map((item) => item.text ?? "").join("\n");
 }
 
+export function buildRequestOptions(
+  model: Model<Api>,
+  settings: BenchmarkProfile["defaults"],
+  auth: { apiKey: string; headers?: Record<string, string>; env?: Record<string, string> },
+): ProviderStreamOptions {
+  const common: ProviderStreamOptions = {
+    apiKey: auth.apiKey,
+    maxTokens: settings.maxTokens,
+    maxRetries: 0,
+    ...(auth.headers ? { headers: auth.headers } : {}),
+    ...(auth.env ? { env: auth.env } : {}),
+    ...(settings.reasoning !== "off" ? { reasoning: settings.reasoning } : {}),
+  };
+
+  // The Codex Responses endpoint rejects the temperature parameter entirely.
+  // Pi's adapter forwards this option when present, so omit it at our seam.
+  if (model.api === "openai-codex-responses") return common;
+  return { ...common, temperature: settings.temperature };
+}
+
 export class PiModelRunner implements ModelRunner {
   public constructor(private readonly modelRegistry: ModelRegistry) {}
 
@@ -34,15 +54,11 @@ export class PiModelRunner implements ModelRunner {
 
     const userMessage: Message = { role: "user", content: task.prompt, timestamp: Date.now() };
     try {
-      const response = await complete(model, { messages: [userMessage] }, {
+      const response = await complete(model, { messages: [userMessage] }, buildRequestOptions(model, settings, {
         apiKey: auth.apiKey,
-        temperature: settings.temperature,
-        maxTokens: settings.maxTokens,
-        maxRetries: 0,
         ...(auth.headers ? { headers: auth.headers } : {}),
         ...(auth.env ? { env: auth.env } : {}),
-        ...(settings.reasoning !== "off" ? { reasoning: settings.reasoning } : {}),
-      });
+      }));
       const output = textFromContent(response.content as Array<{ type: string; text?: string }>);
       return {
         runId: "",

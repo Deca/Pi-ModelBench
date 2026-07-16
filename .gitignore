@@ -1,4 +1,5 @@
 .pi/coding-companion/
+.pi/modelbench/runs/
 node_modules/
 dist/
 coverage/
