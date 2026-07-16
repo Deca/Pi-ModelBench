@@ -87,13 +87,24 @@ export interface MetricSummary {
   p95LatencyMs: number;
   meanInputTokens: number;
   meanOutputTokens: number;
+  meanOutputTokensPerSecond: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
   totalCost: number;
+  costPerSuccessfulAttempt: number;
+  consistencyRate: number;
   errorRate: number;
+}
+
+export interface TaskSummary extends MetricSummary {
+  taskId: string;
+  tags: string[];
 }
 
 export interface ModelSummary extends MetricSummary {
   model: ModelRef;
   settings: BenchmarkProfile["defaults"];
+  tasks: TaskSummary[];
 }
 
 export interface BenchmarkResult {

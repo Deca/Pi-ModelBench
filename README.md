@@ -163,7 +163,7 @@ The command accepts a run ID, a JSON report path, or a relative path to a report
 | `--thinking <level>` | `off`, `minimal`, `low`, `medium`, `high`, `xhigh`, or `max` | Profile default |
 | `--temperature <n>` | Request temperature where supported | Profile default |
 | `--max-tokens <n>` | Maximum output tokens | Profile default |
-| `--format markdown\|json` | Choose the displayed report format | `markdown` |
+| `--format html\|json` | Choose the saved report format shown in the completion message | `html` |
 
 Runs execute sequentially. This makes ordering, rate-limit behavior, and failures easier to inspect, although it is slower than parallel execution.
 
@@ -265,7 +265,7 @@ Each completed run writes two files to:
 ```
 
 - `<run-id>.json` — complete machine-readable result, including every prompt, output, grade, usage record, timing measurement, error, and model snapshot;
-- `<run-id>.md` — human-readable comparison report.
+- `<run-id>.html` — rich, browser-readable comparison report with styled tables, task-level results, and expandable raw attempts.
 
 The run ID is printed in the completion message and shown in the result entry added to Pi's main transcript. Use that ID with `/benchmark report <run-id>`.
 
@@ -273,16 +273,15 @@ In interactive Pi mode, the benchmark summary is printed directly in the main tr
 
 Reports include:
 
-- pass rate;
-- mean grade score;
-- mean latency;
-- p50 latency;
-- p95 latency;
-- mean input tokens;
-- mean output tokens;
-- total reported cost;
+- pass rate and mean grade score;
+- per-task capability/precision results;
+- repeated-attempt consistency/stability;
+- mean, p50, and p95 latency;
+- mean output tokens per second;
+- total input/output tokens;
+- total cost and cost per successful attempt;
 - error rate;
-- per-task and per-attempt raw results.
+- expandable per-attempt prompts, outputs, grades, timing, and usage.
 
 Benchmark outputs may contain sensitive prompts or model responses. Keep `.pi/modelbench/runs/` private when tasks contain confidential information.
 

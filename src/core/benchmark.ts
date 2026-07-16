@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { summarizeRecords } from "./statistics.js";
+import { summarizeRecords, summarizeTaskRecords } from "./statistics.js";
 import type { BenchmarkProfile, BenchmarkResult, BenchmarkTarget, ModelRunner, ModelSummary, RunRecord } from "./types.js";
 
 function sameSettings(
@@ -45,6 +45,7 @@ export async function runBenchmark(
       cost: target.model.cost,
     },
     settings: target.settings,
+    tasks: summarizeTaskRecords(records.filter((record) => record.model.provider === target.model.provider && record.model.id === target.model.id && sameSettings(record.settings, target.settings))),
     ...summarizeRecords(records.filter((record) => record.model.provider === target.model.provider && record.model.id === target.model.id && sameSettings(record.settings, target.settings))),
   }));
 

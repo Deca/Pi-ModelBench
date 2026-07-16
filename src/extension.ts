@@ -6,7 +6,7 @@ import { Box, Text } from "@earendil-works/pi-tui";
 import { runBenchmark } from "./core/benchmark.js";
 import { loadProfiles } from "./core/profiles.js";
 import { PiModelRunner } from "./core/pi-runner.js";
-import { renderComparisonTable, renderMarkdown } from "./core/report.js";
+import { renderComparisonTable, renderHtml } from "./core/report.js";
 import type { BenchmarkProfile, ThinkingLevel } from "./core/types.js";
 
 interface ParsedArgs {
@@ -20,7 +20,7 @@ interface ReportEntryData {
   runId: string;
   summary: string;
   jsonPath: string;
-  markdownPath: string;
+  htmlPath: string;
 }
 
 function parseArgs(raw: string): ParsedArgs {
@@ -47,12 +47,12 @@ function usage(): string {
     "Usage:",
     "  /benchmark profiles",
     "  /benchmark models [--available]",
-    "  /benchmark <profile> --models provider/model[,provider/model] [--runs 3] [--format markdown|json]",
+    "  /benchmark <profile> --models provider/model[,provider/model] [--runs 3] [--format html|json]",
     "  /benchmark report <run-id>",
     "",
     "Examples:",
     "  /benchmark coding --models openai/gpt-5.6,anthropic/claude-sonnet-4-5 --runs 2",
-    "  /benchmark reasoning --models openai/gpt-5.6:high --format markdown",
+    "  /benchmark reasoning --models openai/gpt-5.6:high --format html",
   ].join("\n");
 }
 
@@ -77,20 +77,30 @@ function profileWithOverrides(profile: BenchmarkProfile, args: ParsedArgs): Benc
   };
 }
 
-async function saveResult(cwd: string, result: Awaited<ReturnType<typeof runBenchmark>>): Promise<{ jsonPath: string; markdownPath: string }> {
+async function saveResult(cwd: string, result: Awaited<ReturnType<typeof runBenchmark>>): Promise<{ jsonPath: string; htmlPath: string }> {
   const directory = join(cwd, ".pi", "modelbench", "runs");
   await mkdir(directory, { recursive: true });
   const jsonPath = join(directory, `${result.runId}.json`);
-  const markdownPath = join(directory, `${result.runId}.md`);
+  const htmlPath = join(directory, `${result.runId}.html`);
   await Promise.all([
     writeFile(jsonPath, `${JSON.stringify(result, null, 2)}\n`, "utf8"),
-    writeFile(markdownPath, renderMarkdown(result), "utf8"),
+    writeFile(htmlPath, renderHtml(result), "utf8"),
   ]);
-  return { jsonPath, markdownPath };
+  return { jsonPath, htmlPath };
 }
 
 function formatSummary(result: Awaited<ReturnType<typeof runBenchmark>>): string {
-  return result.models.map((summary) => `${summary.model.provider}/${summary.model.id} [thinking:${summary.settings?.reasoning ?? "unknown"}]: ${(summary.passRate * 100).toFixed(1)}% pass, ${summary.meanLatencyMs.toFixed(0)}ms mean, $${summary.totalCost.toFixed(6)}`).join("\n");
+  return result.models.map((summary) => [
+    `${summary.model.provider}/${summary.model.id} [thinking:${summary.settings?.reasoning ?? "unknown"}]`,
+    `pass ${(summary.passRate * 100).toFixed(1)}%`,
+    `score ${summary.meanScore.toFixed(2)}`,
+    `stable ${((summary.consistencyRate ?? 0) * 100).toFixed(1)}%`,
+    `latency ${summary.meanLatencyMs.toFixed(0)}/${summary.p95LatencyMs.toFixed(0)}ms`,
+    `output ${((summary.meanOutputTokensPerSecond ?? 0)).toFixed(1)} tok/s`,
+    `cost ${summary.totalCost.toFixed(6)}`,
+    `$/pass ${(summary.costPerSuccessfulAttempt ?? 0).toFixed(6)}`,
+    `errors ${((summary.errorRate ?? 0) * 100).toFixed(1)}%`,
+  ].join(" | ")).join("\n");
 }
 
 function appendReportEntry(pi: ExtensionAPI, data: ReportEntryData): void {
@@ -110,14 +120,14 @@ export default function modelbenchExtension(pi: ExtensionAPI) {
       runId: "unknown",
       summary: "No report data available.",
       jsonPath: "",
-      markdownPath: "",
+      htmlPath: "",
     };
     const box = new Box(1, 1, (text) => theme.bg("customMessageBg", text));
     box.addChild(new Text(theme.fg("accent", theme.bold(data.title)), 0, 0));
     box.addChild(new Text(theme.fg("dim", `Run ID: ${data.runId}`), 0, 0));
     box.addChild(new Text(data.summary, 0, 0));
     box.addChild(new Text(theme.fg("dim", `JSON: ${data.jsonPath}`), 0, 0));
-    if (expanded) box.addChild(new Text(theme.fg("dim", `Markdown: ${data.markdownPath}`), 0, 0));
+    if (expanded) box.addChild(new Text(theme.fg("dim", `HTML: ${data.htmlPath}`), 0, 0));
     return box;
   });
 
@@ -148,13 +158,15 @@ export default function modelbenchExtension(pi: ExtensionAPI) {
         const path = existsSync(id) ? resolve(id) : join(ctx.cwd, ".pi", "modelbench", "runs", id.endsWith(".json") ? id : `${id}.json`);
         try {
           const result = JSON.parse(await readFile(path, "utf8")) as Awaited<ReturnType<typeof runBenchmark>>;
+          const htmlPath = path.replace(/\.json$/i, ".html");
+          if (!existsSync(htmlPath)) await writeFile(htmlPath, renderHtml(result), "utf8");
           if (ctx.mode === "tui") {
             appendReportEntry(pi, {
               title: `Benchmark ${result.profile.name}`,
               runId: result.runId,
               summary: renderComparisonTable(result.models),
               jsonPath: path,
-              markdownPath: path.replace(/\.json$/i, ".md"),
+              htmlPath,
             });
             ctx.ui.notify(`Report added to the main area: ${result.runId}`, "info");
           } else ctx.ui.notify(formatSummary(result), "info");
@@ -196,17 +208,17 @@ export default function modelbenchExtension(pi: ExtensionAPI) {
           if (record.error) ctx.ui.notify(`${record.model.provider}/${record.model.id} · ${record.taskId}: ${record.error}`, "warning");
         });
         const paths = await saveResult(ctx.cwd, result);
-        const format = args.values.get("format") ?? "markdown";
+        const format = args.values.get("format") ?? "html";
         if (ctx.mode === "tui") {
           appendReportEntry(pi, {
             title: `Benchmark ${effectiveProfile.name}`,
             runId: result.runId,
             summary: renderComparisonTable(result.models),
             jsonPath: paths.jsonPath,
-            markdownPath: paths.markdownPath,
+            htmlPath: paths.htmlPath,
           });
         }
-        ctx.ui.notify(`Benchmark complete: ${result.runId}\nSaved: ${paths.jsonPath}\n${format === "json" ? paths.jsonPath : paths.markdownPath}`, "info");
+        ctx.ui.notify(`Benchmark complete: ${result.runId}\nSaved: ${paths.jsonPath}\n${format === "json" ? paths.jsonPath : paths.htmlPath}`, "info");
       } catch (error) {
         ctx.ui.notify(`Benchmark failed: ${error instanceof Error ? error.message : String(error)}`, "error");
       } finally {

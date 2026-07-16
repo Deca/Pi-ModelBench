@@ -13,18 +13,24 @@ const summary: ModelSummary = {
   p95LatencyMs: 10,
   meanInputTokens: 1,
   meanOutputTokens: 1,
+  meanOutputTokensPerSecond: 100,
+  totalInputTokens: 1,
+  totalOutputTokens: 1,
   totalCost: 0.01,
+  costPerSuccessfulAttempt: 0.01,
+  consistencyRate: 1,
   errorRate: 0,
+  tasks: [],
 };
 
 describe("renderComparisonTable", () => {
   it("renders an aligned text table for plain CLI output", () => {
     const table = renderComparisonTable([summary]);
 
-    expect(table).toContain("Configuration: fake/model");
-    expect(table).toContain("Thinking: off");
-    expect(table).toContain("Pass: 100.0%");
-    expect(table).toContain("P95 latency: 10.0 ms");
-    expect(table).not.toContain("| Pass |");
+    expect(table).toContain("| Cfg | Pass");
+    expect(table).toContain("C1: fake/model [thinking:off");
+    expect(table).toContain("100.0%");
+    expect(table).toContain("Mean/P95 ms");
+    expect(table).toContain("Out tok/s");
   });
 });

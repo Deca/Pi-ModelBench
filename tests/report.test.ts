@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { renderMarkdown } from "../src/core/report.js";
+import { renderHtml } from "../src/core/report.js";
 import type { BenchmarkResult } from "../src/core/types.js";
 
 const result: BenchmarkResult = {
@@ -20,8 +20,32 @@ const result: BenchmarkResult = {
     p95LatencyMs: 10,
     meanInputTokens: 1,
     meanOutputTokens: 1,
+    meanOutputTokensPerSecond: 100,
+    totalInputTokens: 1,
+    totalOutputTokens: 1,
     totalCost: 0.01,
+    costPerSuccessfulAttempt: 0.01,
+    consistencyRate: 1,
     errorRate: 0,
+    tasks: [{
+      taskId: "task",
+      tags: ["test"],
+      count: 1,
+      passRate: 1,
+      meanScore: 1,
+      meanLatencyMs: 10,
+      p50LatencyMs: 10,
+      p95LatencyMs: 10,
+      meanInputTokens: 1,
+      meanOutputTokens: 1,
+      meanOutputTokensPerSecond: 100,
+      totalInputTokens: 1,
+      totalOutputTokens: 1,
+      totalCost: 0.01,
+      costPerSuccessfulAttempt: 0.01,
+      consistencyRate: 1,
+      errorRate: 0,
+    }],
   }],
   records: [{
     runId: "run-1",
@@ -41,14 +65,14 @@ const result: BenchmarkResult = {
   }],
 };
 
-describe("renderMarkdown", () => {
-  it("ends with a quick comparison summary after raw task output", () => {
-    const markdown = renderMarkdown(result);
-    const outputEnd = markdown.indexOf("</details>");
-    const summaryStart = markdown.lastIndexOf("## Final comparison");
+describe("renderHtml", () => {
+  it("renders comparison, task, and raw-attempt sections", () => {
+    const html = renderHtml(result);
 
-    expect(summaryStart).toBeGreaterThan(outputEnd);
-    expect(markdown.slice(summaryStart)).toContain("fake/model");
-    expect(markdown.slice(summaryStart)).toContain("Pass");
+    expect(html).toContain("<!doctype html>");
+    expect(html).toContain("Configuration comparison");
+    expect(html).toContain("Output tok/s");
+    expect(html).toContain("Per-task capability and precision");
+    expect(html).toContain("answer");
   });
 });
