@@ -3,6 +3,14 @@ import type { BenchmarkResult } from "./types.js";
 const percent = (value: number) => `${(value * 100).toFixed(1)}%`;
 const number = (value: number) => value.toFixed(1);
 
+function comparisonTable(result: BenchmarkResult): string {
+  return [
+    "| Model | Pass rate | Score | Mean latency | P95 latency | Mean input tokens | Mean output tokens | Cost | Errors |",
+    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ...result.models.map((summary) => `| ${summary.model.provider}/${summary.model.id} | ${percent(summary.passRate)} | ${number(summary.meanScore)} | ${number(summary.meanLatencyMs)} ms | ${number(summary.p95LatencyMs)} ms | ${number(summary.meanInputTokens)} | ${number(summary.meanOutputTokens)} | $${summary.totalCost.toFixed(6)} | ${percent(summary.errorRate)} |`),
+  ].join("\n");
+}
+
 export function renderMarkdown(result: BenchmarkResult): string {
   const lines = [
     `# Model benchmark: ${result.profile.name}`,
@@ -17,9 +25,7 @@ export function renderMarkdown(result: BenchmarkResult): string {
     "",
     "## Model comparison",
     "",
-    "| Model | Pass rate | Score | Mean latency | P95 latency | Mean input tokens | Mean output tokens | Cost | Errors |",
-    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
-    ...result.models.map((summary) => `| ${summary.model.provider}/${summary.model.id} | ${percent(summary.passRate)} | ${number(summary.meanScore)} | ${number(summary.meanLatencyMs)} ms | ${number(summary.p95LatencyMs)} ms | ${number(summary.meanInputTokens)} | ${number(summary.meanOutputTokens)} | $${summary.totalCost.toFixed(6)} | ${percent(summary.errorRate)} |`),
+    comparisonTable(result),
     "",
     "## Method",
     "",
@@ -31,6 +37,12 @@ export function renderMarkdown(result: BenchmarkResult): string {
     "## Per-task results",
     "",
     ...result.records.map((record) => `### ${record.model.provider}/${record.model.id} · ${record.taskId} · attempt ${record.attempt}\n\n- Grade: **${record.grade.passed ? "PASS" : "FAIL"}** (${record.grade.score.toFixed(2)}) — ${record.grade.details}\n- Latency: ${record.latencyMs.toFixed(1)} ms\n- Tokens: ${record.usage.input} input, ${record.usage.output} output\n- Cost: $${record.usage.cost.total.toFixed(6)}\n\n<details><summary>Output</summary>\n\n${record.output}\n\n</details>`),
+    "",
+    "## Final comparison",
+    "",
+    "This summary is repeated at the end so it is visible when the report opens in Pi's editor.",
+    "",
+    comparisonTable(result),
     "",
   ];
   return lines.join("\n");
