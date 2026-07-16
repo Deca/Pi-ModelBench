@@ -138,13 +138,13 @@ If `--models` is omitted, ModelBench benchmarks the model currently selected in 
 
 ### Compare reasoning levels
 
-A thinking level can be included in a model reference:
+A thinking level can be assigned independently to each model reference:
 
 ```text
-/benchmark reasoning --models openai/gpt-5.6:medium,openai/gpt-5.6:high --runs 3
+/benchmark reasoning --models openai/gpt-5.6-luna:low,openai/gpt-5.6-sol:medium --runs 3
 ```
 
-If all selected model references specify the same thinking level, that level becomes the benchmark setting. You can also set it explicitly with `--thinking`.
+This creates two benchmark configurations with identical tasks but different reasoning settings. You can also set one shared level explicitly with `--thinking`; an explicit `--thinking` value overrides levels included in model references.
 
 ### Read a previous report
 

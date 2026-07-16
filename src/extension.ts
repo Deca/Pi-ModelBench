@@ -81,7 +81,7 @@ async function saveResult(cwd: string, result: Awaited<ReturnType<typeof runBenc
 }
 
 function formatSummary(result: Awaited<ReturnType<typeof runBenchmark>>): string {
-  return result.models.map((summary) => `${summary.model.provider}/${summary.model.id}: ${(summary.passRate * 100).toFixed(1)}% pass, ${summary.meanLatencyMs.toFixed(0)}ms mean, $${summary.totalCost.toFixed(6)}`).join("\n");
+  return result.models.map((summary) => `${summary.model.provider}/${summary.model.id} [thinking:${summary.settings?.reasoning ?? "unknown"}]: ${(summary.passRate * 100).toFixed(1)}% pass, ${summary.meanLatencyMs.toFixed(0)}ms mean, $${summary.totalCost.toFixed(6)}`).join("\n");
 }
 
 async function showModels(ctx: ExtensionContext, availableOnly: boolean): Promise<void> {
@@ -142,20 +142,20 @@ export default function modelbenchExtension(pi: ExtensionAPI) {
       }
       const resolved = await resolveModelScopeWithDiagnostics(modelPatterns, ctx.modelRegistry);
       for (const diagnostic of resolved.diagnostics) ctx.ui.notify(diagnostic.message, "warning");
-      const models = resolved.scopedModels.map((item) => item.model);
-      const explicitThinkingLevels = resolved.scopedModels.map((item) => item.thinkingLevel).filter((level): level is ThinkingLevel => level !== undefined);
-      const explicitThinking = explicitThinkingLevels[0];
-      if (!args.values.has("thinking") && explicitThinking !== undefined && explicitThinkingLevels.length === models.length && new Set(explicitThinkingLevels).size === 1) {
-        effectiveProfile = { ...effectiveProfile, defaults: { ...effectiveProfile.defaults, reasoning: explicitThinking } };
-      }
-      if (models.length === 0) {
+      const targets = resolved.scopedModels.map((item) => ({
+        model: item.model,
+        settings: item.thinkingLevel && !args.values.has("thinking")
+          ? { ...effectiveProfile.defaults, reasoning: item.thinkingLevel }
+          : effectiveProfile.defaults,
+      }));
+      if (targets.length === 0) {
         ctx.ui.notify("No requested models were found. Use /benchmark models to inspect the registry.", "error");
         return;
       }
 
       ctx.ui.setStatus("modelbench", `benchmarking ${effectiveProfile.name}...`);
       try {
-        const result = await runBenchmark(effectiveProfile, models, new PiModelRunner(ctx.modelRegistry), (record, completed, total) => {
+        const result = await runBenchmark(effectiveProfile, targets, new PiModelRunner(ctx.modelRegistry), (record, completed, total) => {
           ctx.ui.setStatus("modelbench", `benchmarking ${effectiveProfile.name} ${completed}/${total}`);
           if (record.error) ctx.ui.notify(`${record.model.provider}/${record.model.id} · ${record.taskId}: ${record.error}`, "warning");
         });

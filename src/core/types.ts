@@ -37,6 +37,11 @@ export interface BenchmarkProfile {
   tasks: BenchmarkTask[];
 }
 
+export interface BenchmarkTarget {
+  model: Model<Api>;
+  settings: BenchmarkProfile["defaults"];
+}
+
 export interface ModelRef {
   provider: string;
   id: string;
@@ -88,6 +93,7 @@ export interface MetricSummary {
 
 export interface ModelSummary extends MetricSummary {
   model: ModelRef;
+  settings: BenchmarkProfile["defaults"];
 }
 
 export interface BenchmarkResult {

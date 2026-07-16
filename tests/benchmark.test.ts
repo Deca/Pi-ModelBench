@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { runBenchmark } from "../src/core/benchmark.js";
-import type { BenchmarkProfile, ModelRunner } from "../src/core/types.js";
+import type { BenchmarkProfile, BenchmarkTarget, ModelRunner } from "../src/core/types.js";
 
 const model = { provider: "fake", id: "alpha", api: "fake", name: "Alpha", contextWindow: 1000, maxTokens: 100, reasoning: false, input: ["text"], baseUrl: "fake", cost: { input: 1, output: 2, cacheRead: 0, cacheWrite: 0 } } as Model<Api>;
 const profile: BenchmarkProfile = {
@@ -35,10 +35,24 @@ const runner: ModelRunner = {
 describe("runBenchmark", () => {
   it("runs every model/task/attempt and emits stable progress", async () => {
     const progress: number[] = [];
-    const result = await runBenchmark(profile, [model], runner, (_record, completed) => progress.push(completed));
+    const targets: BenchmarkTarget[] = [{ model, settings: profile.defaults }];
+    const result = await runBenchmark(profile, targets, runner, (_record, completed) => progress.push(completed));
     expect(result.records).toHaveLength(2);
     expect(result.records.map((record) => record.attempt)).toEqual([1, 2]);
     expect(progress).toEqual([1, 2]);
     expect(result.models[0]?.passRate).toBe(1);
+  });
+
+  it("keeps reasoning settings independent for each model target", async () => {
+    const secondModel = { ...model, id: "sol" };
+    const low = { ...profile.defaults, reasoning: "low" as const };
+    const medium = { ...profile.defaults, reasoning: "medium" as const };
+    const result = await runBenchmark(profile, [
+      { model, settings: low },
+      { model: secondModel, settings: medium },
+    ], runner);
+
+    expect(result.records.map((record) => record.settings.reasoning)).toEqual(["low", "low", "medium", "medium"]);
+    expect(result.models.map((summary) => summary.settings.reasoning)).toEqual(["low", "medium"]);
   });
 });

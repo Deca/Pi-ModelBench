@@ -2,12 +2,13 @@ import type { BenchmarkResult } from "./types.js";
 
 const percent = (value: number) => `${(value * 100).toFixed(1)}%`;
 const number = (value: number) => value.toFixed(1);
+const configurationLabel = (summary: BenchmarkResult["models"][number]) => `${summary.model.provider}/${summary.model.id} [thinking:${summary.settings?.reasoning ?? "unknown"}, temp:${summary.settings?.temperature ?? "?"}, max:${summary.settings?.maxTokens ?? "?"}]`;
 
 function comparisonTable(result: BenchmarkResult): string {
   return [
     "| Model | Pass rate | Score | Mean latency | P95 latency | Mean input tokens | Mean output tokens | Cost | Errors |",
     "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
-    ...result.models.map((summary) => `| ${summary.model.provider}/${summary.model.id} | ${percent(summary.passRate)} | ${number(summary.meanScore)} | ${number(summary.meanLatencyMs)} ms | ${number(summary.p95LatencyMs)} ms | ${number(summary.meanInputTokens)} | ${number(summary.meanOutputTokens)} | $${summary.totalCost.toFixed(6)} | ${percent(summary.errorRate)} |`),
+    ...result.models.map((summary) => `| ${configurationLabel(summary)} | ${percent(summary.passRate)} | ${number(summary.meanScore)} | ${number(summary.meanLatencyMs)} ms | ${number(summary.p95LatencyMs)} ms | ${number(summary.meanInputTokens)} | ${number(summary.meanOutputTokens)} | $${summary.totalCost.toFixed(6)} | ${percent(summary.errorRate)} |`),
   ].join("\n");
 }
 
@@ -15,7 +16,7 @@ export function renderComparisonTable(summaries: BenchmarkResult["models"]): str
   const rows = [
     ["Model", "Pass", "Score", "Mean ms", "P95 ms", "In tok", "Out tok", "Cost", "Errors"],
     ...summaries.map((summary) => [
-      `${summary.model.provider}/${summary.model.id}`,
+      configurationLabel(summary),
       percent(summary.passRate),
       number(summary.meanScore),
       number(summary.meanLatencyMs),
@@ -50,7 +51,7 @@ export function renderMarkdown(result: BenchmarkResult): string {
     "",
     "## Method",
     "",
-    "- Same task prompts and profile settings were used for every model.",
+    "- The same task prompts were used for every configuration; reasoning and request settings are shown per configuration.",
     "- Requests were run sequentially to make ordering and rate-limit behavior auditable.",
     "- Quality was graded with deterministic rules from the profile.",
     "- Raw outputs and per-attempt measurements are included below for auditability.",
