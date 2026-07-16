@@ -11,6 +11,27 @@ function comparisonTable(result: BenchmarkResult): string {
   ].join("\n");
 }
 
+export function renderComparisonTable(summaries: BenchmarkResult["models"]): string {
+  const rows = [
+    ["Model", "Pass", "Score", "Mean ms", "P95 ms", "In tok", "Out tok", "Cost", "Errors"],
+    ...summaries.map((summary) => [
+      `${summary.model.provider}/${summary.model.id}`,
+      percent(summary.passRate),
+      number(summary.meanScore),
+      number(summary.meanLatencyMs),
+      number(summary.p95LatencyMs),
+      number(summary.meanInputTokens),
+      number(summary.meanOutputTokens),
+      `$${summary.totalCost.toFixed(6)}`,
+      percent(summary.errorRate),
+    ]),
+  ];
+  const widths = rows[0]?.map((_, column) => Math.max(...rows.map((row) => row[column]?.length ?? 0))) ?? [];
+  const border = `+-${widths.join("-+-")}-+`;
+  const formatRow = (row: string[], header = false) => `| ${row.map((value, column) => header || column === 0 ? value.padEnd(widths[column] ?? value.length) : value.padStart(widths[column] ?? value.length)).join(" | ")} |`;
+  return [border, formatRow(rows[0] ?? [], true), border, ...rows.slice(1).map((row) => formatRow(row)), border].join("\n");
+}
+
 export function renderMarkdown(result: BenchmarkResult): string {
   const lines = [
     `# Model benchmark: ${result.profile.name}`,
@@ -42,7 +63,9 @@ export function renderMarkdown(result: BenchmarkResult): string {
     "",
     "This summary is repeated at the end so it is visible when the report opens in Pi's editor.",
     "",
-    comparisonTable(result),
+    "```text",
+    renderComparisonTable(result.models),
+    "```",
     "",
   ];
   return lines.join("\n");

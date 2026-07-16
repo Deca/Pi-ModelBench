@@ -48,6 +48,6 @@ describe("renderMarkdown", () => {
 
     expect(summaryStart).toBeGreaterThan(outputEnd);
     expect(markdown.slice(summaryStart)).toContain("fake/model");
-    expect(markdown.slice(summaryStart)).toContain("Pass rate");
+    expect(markdown.slice(summaryStart)).toContain("Pass");
   });
 });

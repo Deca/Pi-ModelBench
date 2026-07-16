@@ -1,0 +1,28 @@
+import { describe, expect, it } from "vitest";
+import { renderComparisonTable } from "../src/core/report.js";
+import type { ModelSummary } from "../src/core/types.js";
+
+const summary: ModelSummary = {
+  model: { provider: "fake", id: "model", api: "fake", name: "Fake", contextWindow: 1000, maxTokens: 100, cost: { input: 1, output: 1, cacheRead: 0, cacheWrite: 0 } },
+  count: 1,
+  passRate: 1,
+  meanScore: 1,
+  meanLatencyMs: 10,
+  p50LatencyMs: 10,
+  p95LatencyMs: 10,
+  meanInputTokens: 1,
+  meanOutputTokens: 1,
+  totalCost: 0.01,
+  errorRate: 0,
+};
+
+describe("renderComparisonTable", () => {
+  it("renders an aligned text table for plain CLI output", () => {
+    const table = renderComparisonTable([summary]);
+
+    expect(table).toContain("Model");
+    expect(table).toContain("fake/model");
+    expect(table).toContain("+" );
+    expect(table).not.toContain("| Model |");
+  });
+});
