@@ -1,6 +1,6 @@
 # Pi ModelBench
 
-![loading-ag-2770](C:\Users\User\Documents\__PROJECTS\_AI\modelBench\assets\output_cli.JPG)
+![Pi ModelBench CLI report](assets/output_cli.JPG)
 
 Pi ModelBench is an exploratory Pi extension for comparing language models against repeatable, usage-oriented benchmark profiles.
 
@@ -261,7 +261,7 @@ Each completed run writes two files to:
 - `<run-id>.json` — complete machine-readable result, including every prompt, output, grade, usage record, timing measurement, error, and model snapshot;
 - `<run-id>.html` — rich, browser-readable comparison report with styled tables, task-level results, and expandable raw attempts.
 
-![output_html.JPG](C:\Users\User\Documents\__PROJECTS\_AI\modelBench\assets\output_html.JPG)
+![Pi ModelBench HTML report](assets/output_html.JPG)
 
 
 

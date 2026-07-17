@@ -21,6 +21,7 @@
     "src",
     "profiles",
     "fixtures",
+    "assets",
     "README.md"
   ],
   "scripts": {
