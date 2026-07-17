@@ -1,5 +1,7 @@
 # Pi ModelBench
 
+![loading-ag-2770](C:\Users\User\Documents\__PROJECTS\_AI\modelBench\assets\output_cli.JPG)
+
 Pi ModelBench is an exploratory Pi extension for comparing language models against repeatable, usage-oriented benchmark profiles.
 
 Along some profiles with their correlated benchmarks I've bundled `simplebench` profile that uses the public SimpleBench benchmark from the AI Explained team
@@ -80,7 +82,7 @@ anthropic/claude-sonnet-4-5
 openai/gpt-5.6:high
 ```
 
-##
+## 
 
 ### Show help
 
@@ -258,6 +260,10 @@ Each completed run writes two files to:
 
 - `<run-id>.json` — complete machine-readable result, including every prompt, output, grade, usage record, timing measurement, error, and model snapshot;
 - `<run-id>.html` — rich, browser-readable comparison report with styled tables, task-level results, and expandable raw attempts.
+
+![output_html.JPG](C:\Users\User\Documents\__PROJECTS\_AI\modelBench\assets\output_html.JPG)
+
+
 
 The run ID is printed in the completion message and shown in the result entry added to Pi's main transcript. Use that ID with `/benchmark report <run-id>`.
 
