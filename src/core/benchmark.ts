@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { summarizeRecords, summarizeTaskRecords } from "./statistics.js";
+import { summarizeRecords, summarizeTaskRecords, withOverallScores } from "./statistics.js";
 import type { BenchmarkProfile, BenchmarkResult, BenchmarkTarget, ModelRunner, ModelSummary, RunRecord } from "./types.js";
 
 function sameSettings(
@@ -57,7 +57,7 @@ export async function runBenchmark(
     profile: { name: profile.name, description: profile.description },
     settings: profile.defaults,
     totalCost: records.reduce((sum, record) => sum + record.usage.cost.total, 0),
-    models: summaries,
+    models: withOverallScores(summaries),
     records,
   };
 }

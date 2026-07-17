@@ -1,6 +1,6 @@
 {
   "name": "structured-data",
-  "description": "Machine-readable extraction and formatting tasks scored without an LLM judge.",
+  "description": "Machine-readable extraction, normalization, classification, and schema tasks scored without an LLM judge.",
   "defaults": { "runs": 3, "temperature": 0, "maxTokens": 256, "reasoning": "low" },
   "tasks": [
     {
@@ -20,6 +20,24 @@
       "tags": ["schema"],
       "prompt": "Return JSON only with name set to Ada and language set to Python. Additional fields are allowed.",
       "grader": { "type": "json-fields", "fields": { "name": "Ada", "language": "Python" } }
+    },
+    {
+      "id": "nested-order-extraction",
+      "tags": ["json", "extraction", "nested", "types"],
+      "prompt": "Return JSON only with exactly these fields extracted from this text: Order O-17 belongs to sam@example.com, is shipped, and contains SKU A12 quantity 2 at unit price 9.50 and SKU B07 quantity 1 at unit price 4.00. Use fields orderId, email, shipped, and lines, where each line has sku, quantity, and unitPrice.",
+      "grader": { "type": "json-exact", "expected": { "orderId": "O-17", "email": "sam@example.com", "shipped": true, "lines": [{ "sku": "A12", "quantity": 2, "unitPrice": 9.5 }, { "sku": "B07", "quantity": 1, "unitPrice": 4 }] } }
+    },
+    {
+      "id": "normalized-payment-record",
+      "tags": ["json", "normalization", "types"],
+      "prompt": "Return JSON only with fields date, status, and amount. Normalize `07/03/2025` (day/month/year), `PAID`, and `$1,250.00` into an ISO date, lowercase status, and number.",
+      "grader": { "type": "json-exact", "expected": { "date": "2025-03-07", "status": "paid", "amount": 1250 } }
+    },
+    {
+      "id": "ordered-entity-list",
+      "tags": ["json", "extraction", "ordering"],
+      "prompt": "Return JSON only with one field `entities`. Extract the product names in source order, preserving duplicates, from: `Mira compared Atlas, then Nova; Atlas was selected over Nova.`",
+      "grader": { "type": "json-exact", "expected": { "entities": ["Mira", "Atlas", "Nova", "Atlas", "Nova"] } }
     }
   ]
 }

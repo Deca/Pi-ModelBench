@@ -1,6 +1,25 @@
-.pi/coding-companion/
-.pi/modelbench/runs/
+# Local Pi state and benchmark artifacts
+.pi/
+
+# Development-only notes
+/docs/
+/CONTEXT.md
+
+# Dependencies, builds, coverage, and package artifacts
 node_modules/
 dist/
 coverage/
+*.tgz
+
+# Local test output and logs
+output_test*.txt
 *.log
+
+# Local credentials and environment files
+.env
+.env.*
+!.env.example
+
+# OS/editor noise
+.DS_Store
+Thumbs.db

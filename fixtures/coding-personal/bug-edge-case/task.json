@@ -1,0 +1,12 @@
+{
+  "id": "bug-edge-case",
+  "title": "Fix pagination when the item count is an exact multiple",
+  "prompt": "Fix the pagination bug when the item count is an exact multiple of the page size. Preserve the public API and add a regression test. Do not change files outside the repository.",
+  "tags": ["debugging", "edge-case", "testing"],
+  "difficulty": "medium",
+  "workingDirectory": "repository",
+  "verification": {
+    "command": "node --test ../verify/pagination.test.js",
+    "timeoutMs": 120000
+  }
+}

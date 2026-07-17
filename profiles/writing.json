@@ -1,6 +1,6 @@
 {
   "name": "writing",
-  "description": "Constrained professional writing tasks. Deterministic checks cover required content; human or judge review is still recommended.",
+  "description": "Constrained professional writing tasks covering release notes, incident communication, audience adaptation, and factual preservation.",
   "defaults": { "runs": 3, "temperature": 0.2, "maxTokens": 384, "reasoning": "off" },
   "tasks": [
     {
@@ -14,6 +14,24 @@
       "tags": ["summarization"],
       "prompt": "Summarize this incident in two sentences: a database index was missing, API latency increased for 18 minutes, and the index was added. Include the duration and the remediation.",
       "grader": { "type": "contains", "values": ["18", "index"] }
+    },
+    {
+      "id": "customer-delay-email",
+      "tags": ["customer-communication", "tone", "constraints"],
+      "prompt": "Write a concise customer email apologizing for a 2-hour delay. Promise an update by 16:00 UTC. Include a greeting and sign-off, and keep it under 75 words.",
+      "grader": { "type": "all", "graders": [{ "type": "contains", "values": ["2-hour", "16:00 UTC"] }, { "type": "regex", "pattern": "apolog", "flags": "i" }] }
+    },
+    {
+      "id": "incident-status-update",
+      "tags": ["incident", "summarization", "audience"],
+      "prompt": "Write a two-sentence status update for an incident: API latency increased for 18 minutes because a database index was missing; the index has now been added and service is restored. Include the impact, duration, cause, remediation, and current status.",
+      "grader": { "type": "all", "graders": [{ "type": "contains", "values": ["18 minutes", "index"] }, { "type": "regex", "pattern": "(?:API|latency)", "flags": "i" }, { "type": "regex", "pattern": "(?:resolved|restored|recovered)", "flags": "i" }] }
+    },
+    {
+      "id": "plain-language-rewrite",
+      "tags": ["editing", "clarity", "constraint"],
+      "prompt": "Rewrite this sentence for a nontechnical customer while preserving its meaning and the exact term `rollback`: `The deployment increased p95 latency, so engineering will rollback to the previous release.` Return one sentence only.",
+      "grader": { "type": "all", "graders": [{ "type": "contains", "values": ["rollback"] }, { "type": "regex", "pattern": "(?:slower|slow|latency|response)", "flags": "i" }, { "type": "regex", "pattern": "(?:previous|earlier|old)", "flags": "i" }] }
     }
   ]
 }

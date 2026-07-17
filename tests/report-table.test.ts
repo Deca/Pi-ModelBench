@@ -27,11 +27,27 @@ describe("renderComparisonTable", () => {
   it("renders an aligned text table for plain CLI output", () => {
     const table = renderComparisonTable([summary]);
 
-    expect(table).toContain("| Cfg | Pass");
+    expect(table).toContain("Overall");
+    const header = table.split("\n", 1)[0] ?? "";
+    expect(header.indexOf("Score")).toBeLessThan(header.indexOf("Overall"));
     expect(table).toContain("C1: fake/model [thinking:off");
     expect(table).toContain("100.0%");
-    expect(table).toContain("Mean/P95 ms");
+    expect(table).toContain("Mean/P95");
+    expect(table).toContain("Out tok/Q");
+    expect(table).toContain("$/run");
+    expect(table).toContain("Perf/$");
+    expect(table).toContain("Tests");
+    expect(table).toContain("Rounds per model: 1");
+    expect(table).toContain("Tasks per model: 0");
     expect(table).toContain("Out tok/s");
+    expect(table).toContain("Overall = 60% pass");
     expect(table).toContain("Total bench cost");
+
+    const repeatedTable = renderComparisonTable([{
+      ...summary,
+      count: 2,
+      settings: { ...summary.settings, runs: 2 },
+    }]);
+    expect(repeatedTable).toContain("20000.0");
   });
 });

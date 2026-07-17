@@ -15,6 +15,15 @@ describe("gradeOutput", () => {
     });
   });
 
+  it("matches the first SimpleBench-style final answer choice", () => {
+    expect(gradeOutput("Reasoning...\nFinal Answer: B", { type: "final-answer", expected: "b" })).toEqual({
+      passed: true,
+      score: 1,
+      details: "Final answer matched the expected choice",
+    });
+    expect(gradeOutput("Final Answer: A\nFinal Answer: B", { type: "final-answer", expected: "B" }).passed).toBe(false);
+  });
+
   it("accepts semantically correct debugging explanations without one required phrase", () => {
     const result = gradeOutput("Bug: i <= items.length accesses an undefined item. Fix: use i < items.length.", {
       type: "regex",

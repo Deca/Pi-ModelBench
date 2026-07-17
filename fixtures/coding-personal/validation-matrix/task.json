@@ -1,0 +1,12 @@
+{
+  "id": "validation-matrix",
+  "title": "Add strict configuration validation",
+  "prompt": "Implement the validation rules described by the existing module comments. Preserve the public API and add focused tests for defaults, valid string inputs, and invalid values. Do not change files outside the repository.",
+  "tags": ["validation", "api-contract", "testing"],
+  "difficulty": "medium",
+  "workingDirectory": "repository",
+  "verification": {
+    "command": "node --test ../verify/config.test.js",
+    "timeoutMs": 120000
+  }
+}

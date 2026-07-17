@@ -2,13 +2,9 @@
 
 Pi ModelBench is an exploratory Pi extension for comparing language models against repeatable, usage-oriented benchmark profiles.
 
-It helps answer questions such as:
-
-- Which model is most reliable for coding tasks?
-- Does a higher reasoning level improve quality enough to justify its cost and latency?
-- Which model gives the best balance of quality, speed, and token usage for a specific sector?
-
-ModelBench is **not** an academic leaderboard. It evaluates the models and tasks that matter to your workflow.
+Along some profiles with their correlated benchmarks I've bundled `simplebench` profile that uses the public SimpleBench benchmark from the AI Explained team
+The question set to its then adapted to ModelBench deterministic runner
+Attribution and the original MIT license are preserved in `profiles/SIMPLEBENCH-NOTICE.txt`.
 
 ## Design goals
 
@@ -22,7 +18,7 @@ ModelBench follows a deterministic-first evaluation approach:
 - preserve raw outputs and model metadata for auditability;
 - keep provider integrations in Pi instead of maintaining a second provider catalog.
 
-The package reuses Pi's model registry, authentication, provider adapters, model discovery, and pricing metadata. It does not maintain provider integrations or a separate model catalog.
+Modelbench reuses Pi's model registry, authentication, provider adapters, model discovery, and pricing metadata so it's basically zero-conf
 
 ## Installation
 
@@ -33,7 +29,7 @@ npm install
 pi -e ./src/extension.ts
 ```
 
-This loads the extension for the current Pi process. It is useful while developing or experimenting with the package.
+This loads the extension for the current Pi process
 
 ### Install as a Pi package
 
@@ -46,7 +42,7 @@ pi install ./path/to/pi-modelbench
 From Git:
 
 ```bash
-pi install git:github.com/<owner>/pi-modelbench@main
+pi install git:github.com/Deca/Pi-ModelBench@main
 ```
 
 Pi packages can also be installed at project scope with `-l`:
@@ -55,18 +51,9 @@ Pi packages can also be installed at project scope with `-l`:
 pi install -l ./path/to/pi-modelbench
 ```
 
-Review extension source before installing packages. Pi extensions run with the permissions of the current user.
+## Model availability
 
-## Authentication and model availability
-
-ModelBench uses the credentials already configured for Pi. Configure provider credentials using Pi's normal mechanisms, such as:
-
-- environment variables;
-- Pi's `/login` flow where supported;
-- Pi's stored authentication configuration;
-- custom provider/model configuration supported by Pi.
-
-Inspect registered models with:
+ Inspect the Pi available models with:
 
 ```text
 /benchmark models
@@ -93,11 +80,7 @@ anthropic/claude-sonnet-4-5
 openai/gpt-5.6:high
 ```
 
-Provider and model names change frequently. ModelBench resolves references through Pi's current registry at runtime and snapshots the selected metadata in each report.
-
-## Commands
-
-All commands are entered inside an interactive Pi session after the extension has been loaded.
+##
 
 ### Show help
 
@@ -128,9 +111,10 @@ For example:
 
 ```text
 /benchmark coding --models openai/gpt-5.6,anthropic/claude-sonnet-4-5 --runs 3
+/benchmark coding-personal --models openai/gpt-5.6 --runs 2
 ```
 
-If `--models` is omitted, ModelBench benchmarks the model currently selected in Pi:
+If `--models` is omitted ModelBench benchmarks the model currently selected in Pi:
 
 ```text
 /benchmark coding --runs 3
@@ -156,58 +140,66 @@ The command accepts a run ID, a JSON report path, or a relative path to a report
 
 ## Run options
 
-| Option | Description | Default |
-| --- | --- | --- |
-| `--models <list>` | Comma-separated Pi model references | Current Pi model |
-| `--runs <n>` | Number of attempts per model/task pair | Profile default |
-| `--thinking <level>` | `off`, `minimal`, `low`, `medium`, `high`, `xhigh`, or `max` | Profile default |
-| `--temperature <n>` | Request temperature where supported | Profile default |
-| `--max-tokens <n>` | Maximum output tokens | Profile default |
-| `--format html\|json` | Choose the saved report format shown in the completion message | `html` |
+| Option                | Description                                                    | Default          |
+| --------------------- | -------------------------------------------------------------- | ---------------- |
+| `--models <list>`     | Comma-separated Pi model references                            | Current Pi model |
+| `--runs <n>`          | Number of attempts per model/task pair                         | Profile default  |
+| `--thinking <level>`  | `off`, `minimal`, `low`, `medium`, `high`, `xhigh`, or `max`   | Profile default  |
+| `--temperature <n>`   | Request temperature where supported                            | Profile default  |
+| `--max-tokens <n>`    | Maximum output tokens                                          | Profile default  |
+| `--format html\|json` | Choose the saved report format shown in the completion message | `html`           |
 
-Runs execute sequentially. This makes ordering, rate-limit behavior, and failures easier to inspect, although it is slower than parallel execution.
+Runs execute sequentially. This makes ordering, rate-limit behavior, and failures easier to inspect, although it is slower than parallel execution
 
 ## Included profiles
 
-Profiles are JSON files containing benchmark defaults and tasks.
+Profiles are JSON files containing benchmark defaults and tasks
 
 ### `coding`
 
-Software-engineering tasks covering:
+Eight tool-free software-engineering tasks designed to separate models on:
 
-- algorithmic complexity;
-- debugging diagnosis;
-- API contracts and structured output;
-- instruction following and scope control.
+- algorithmic complexity and state tracing;
+- debugging and JavaScript language semantics;
+- API contracts and backward compatibility;
+- boundary-test selection and instruction following.
+
+### `coding-personal`
+
+Three isolated repository tasks covering pagination edge cases, strict configuration validation, and asynchronous retry error paths. Each task receives a fresh fixture copy, the Pi coding tools (`read`, `bash`, `edit`, and `write`), and an external verification command. Results retain changed files, diff summaries, verification output, tool-turn counts, and raw agent messages.
+
+### `simplebench`
+
+A public 10-question multiple-choice reasoning calibration profile derived from [SimpleBench](https://github.com/simple-bench/SimpleBench). It remains unchanged for comparability and uses deterministic answer extraction and exact matching, so it runs through the existing text benchmark engine without Python, Docker, or additional provider dependencies. The source project is MIT-licensed; the bundled profile retains the original question content and attribution.
 
 ### `reasoning`
 
-Short problems with independently checkable answers, including:
+Eight multi-step problems with independently checkable answers, covering:
 
-- arithmetic;
-- logic;
-- constraint satisfaction.
+- arithmetic and modular number theory;
+- logic and state tracking;
+- probability and graph reasoning;
+- constraint satisfaction and subset selection.
 
 ### `structured-data`
 
-Machine-readable tasks covering:
+Six machine-readable tasks covering:
 
-- JSON extraction;
-- classification;
-- required fields and schema-like checks.
+- flat and nested JSON extraction;
+- normalization and type conversion;
+- classification, ordering, and schema compliance.
 
 ### `customer-support`
 
-Support tasks covering:
+Five support tasks covering:
 
-- policy accuracy;
-- required facts;
-- clarification questions;
-- concise responses.
+- refund-policy boundaries;
+- clarification and damaged-order triage;
+- account-security boundaries, safe escalation, and concise responses.
 
 ### `writing`
 
-Constrained writing tasks with deterministic checks for required content. These checks are useful signals, but writing quality should also be reviewed by a human or a separate judge.
+Five constrained professional-writing tasks covering release notes, executive summaries, customer delay emails, incident updates, and plain-language rewrites. Deterministic checks verify required facts and wording; human or judge review is still recommended for tone and overall quality.
 
 ## Custom profiles
 
@@ -269,7 +261,7 @@ Each completed run writes two files to:
 
 The run ID is printed in the completion message and shown in the result entry added to Pi's main transcript. Use that ID with `/benchmark report <run-id>`.
 
-In interactive Pi mode, the benchmark summary is printed directly in the main transcript. The saved JSON and Markdown files contain the detailed per-task and per-attempt results.
+In interactive Pi mode the benchmark summary is printed directly in the main transcript. The saved JSON and Markdown files contain the detailed per-task and per-attempt results.
 
 Reports include:
 
@@ -278,35 +270,22 @@ Reports include:
 - repeated-attempt consistency/stability;
 - mean, p50, and p95 latency;
 - mean output tokens per second;
+- output tokens per task/question;
+- cost per complete benchmark run (`$/run`);
+- performance per dollar (`Perf/$`, score percentage divided by `$/run`);
 - total input/output tokens;
 - total cost and cost per successful attempt;
 - error rate;
 - expandable per-attempt prompts, outputs, grades, timing, and usage.
 
-Benchmark outputs may contain sensitive prompts or model responses. Keep `.pi/modelbench/runs/` private when tasks contain confidential information.
-
 ## Current limitations
 
-The current MVP benchmarks single-turn text responses only. It does not yet benchmark:
+The current MVP does not yet benchmark:
 
-- tool selection or tool arguments;
-- repository changes or executable coding tasks;
+- tool selection or tool arguments as a separate profile;
 - multi-turn workflows;
 - agent handoffs;
 - images or other multimodal inputs;
 - LLM-as-a-judge or human-review workflows;
 - concurrent execution;
 - statistical confidence intervals or significance testing.
-
-These capabilities should be added as explicit benchmark modes or task types rather than weakening the deterministic single-turn results.
-
-## Development
-
-```bash
-npm install
-npm run typecheck
-npm test
-npm run build
-```
-
-The core engine is kept separate from the Pi command layer so it can later support another adapter, such as a portable CLI or a skill wrapper, without changing profiles, graders, statistics, or report generation.

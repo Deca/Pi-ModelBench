@@ -1,0 +1,10 @@
+{
+  "name": "coding-personal",
+  "description": "Isolated coding tasks drawn from real software-development work.",
+  "defaults": {
+    "runs": 1,
+    "temperature": 0,
+    "maxTokens": 2048,
+    "reasoning": "medium"
+  }
+}

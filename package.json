@@ -2,8 +2,15 @@
   "name": "pi-modelbench",
   "version": "0.1.0",
   "description": "Deterministic-first model benchmarking for the Pi coding agent",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Deca/Pi-ModelBench.git"
+  },
+  "homepage": "https://github.com/Deca/Pi-ModelBench#readme",
+  "bugs": {
+    "url": "https://github.com/Deca/Pi-ModelBench/issues"
+  },
   "type": "module",
-  "private": true,
   "keywords": [
     "pi-package",
     "llm",
@@ -13,6 +20,7 @@
   "files": [
     "src",
     "profiles",
+    "fixtures",
     "README.md"
   ],
   "scripts": {

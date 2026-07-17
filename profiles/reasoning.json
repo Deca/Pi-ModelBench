@@ -1,25 +1,55 @@
 {
   "name": "reasoning",
-  "description": "Short problems with independently checkable answers, useful for comparing reasoning effort against latency and cost.",
+  "description": "Multi-step arithmetic, logic, probability, graph, and constraint problems with independently checkable answers.",
   "defaults": { "runs": 3, "temperature": 0, "maxTokens": 512, "reasoning": "medium" },
   "tasks": [
     {
       "id": "arithmetic",
-      "tags": ["math", "exactness"],
-      "prompt": "Return only the integer answer: 37 * 19 - 42.",
-      "grader": { "type": "number", "expected": 661, "tolerance": 0 }
+      "tags": ["math", "multi-step", "exactness"],
+      "prompt": "Return only the integer answer: ((48 * 17) - 96) / 4 + 23.",
+      "grader": { "type": "number", "expected": 203, "tolerance": 0 }
     },
     {
       "id": "logic",
-      "tags": ["logic", "exactness"],
-      "prompt": "Three boxes are labeled apples, oranges, and mixed. Every label is wrong. You may draw one fruit from one box. Which labeled box should you draw from? Return only its current label.",
-      "grader": { "type": "normalized-exact", "expected": "mixed" }
+      "tags": ["logic", "multi-step", "exactness"],
+      "prompt": "Exactly one statement below is true. A: exactly two of these statements are true. B: 9 is divisible by 3. C: 2 + 2 = 5. Return only the letter of the true statement.",
+      "grader": { "type": "normalized-exact", "expected": "B" }
     },
     {
       "id": "constraint-satisfaction",
-      "tags": ["planning"],
-      "prompt": "Return JSON only: schedule two non-overlapping tasks A and B into slots 1 and 2, with A before B. Use exactly this shape: {\"A\":1,\"B\":2}.",
-      "grader": { "type": "json-exact", "expected": { "A": 1, "B": 2 } }
+      "tags": ["planning", "constraints", "structured-output"],
+      "prompt": "Return JSON only. Place W, X, Z, and Y in positions 1 through 4. W must be before X; X must be before Z; and Z must be immediately before Y. Return exactly an object mapping each letter to its position.",
+      "grader": { "type": "json-exact", "expected": { "W": 1, "X": 2, "Z": 3, "Y": 4 } }
+    },
+    {
+      "id": "modular-system",
+      "tags": ["math", "number-theory", "multi-step"],
+      "prompt": "Return only the smallest non-negative integer x such that x leaves remainder 5 when divided by 9 and remainder 8 when divided by 11.",
+      "grader": { "type": "number", "expected": 104, "tolerance": 0 }
+    },
+    {
+      "id": "probability-without-replacement",
+      "tags": ["probability", "multi-step", "exactness"],
+      "prompt": "A bag contains 4 red and 3 blue balls. Two balls are drawn without replacement. Return only the probability that both balls have the same color as a reduced fraction.",
+      "grader": { "type": "normalized-exact", "expected": "3/7" }
+    },
+    {
+      "id": "state-trace",
+      "tags": ["state-tracking", "math", "exactness"],
+      "prompt": "Return only the integer value. Start with value = 10. For i from 1 through 4, add 2*i when i is odd and subtract i when i is even. What is the final value?",
+      "grader": { "type": "number", "expected": 12, "tolerance": 0 }
+    },
+    {
+      "id": "shortest-path",
+      "tags": ["graph", "planning", "exactness"],
+      "prompt": "Return only the shortest distance from A to D in this directed weighted graph: A->B=4, A->C=2, C->B=1, B->D=5, C->D=9.",
+      "grader": { "type": "number", "expected": 8, "tolerance": 0 }
+    },
+    {
+      "id": "subset-selection",
+      "tags": ["constraints", "combinatorics", "structured-output"],
+      "prompt": "Return JSON only. Choose exactly two numbers from [2, 5, 8, 11] whose sum is 13. Preserve ascending order.",
+      "grader": { "type": "json-exact", "expected": [5, 8] }
     }
   ]
 }

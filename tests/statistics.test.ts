@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { summarizeRecords } from "../src/core/statistics.js";
-import type { RunRecord } from "../src/core/types.js";
+import { summarizeRecords, withOverallScores } from "../src/core/statistics.js";
+import type { ModelSummary, RunRecord } from "../src/core/types.js";
 
 const record = (latencyMs: number, passed: boolean): RunRecord => ({
   runId: "run",
@@ -33,5 +33,22 @@ describe("summarizeRecords", () => {
 
   it("reports stability as unavailable when tasks run once", () => {
     expect(summarizeRecords([record(10, true)]).consistencyRate).toBeNull();
+  });
+
+  it("scores quality, relative cost, and relative latency separately", () => {
+    const summary = (passRate: number, totalCost: number, meanLatencyMs: number): ModelSummary => ({
+      ...summarizeRecords([]),
+      count: 1,
+      passRate,
+      totalCost,
+      meanLatencyMs,
+      model: { provider: "fake", id: `${totalCost}`, api: "fake", name: "Fake", contextWindow: 1000, maxTokens: 100, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } },
+      settings: { runs: 1, temperature: 0, maxTokens: 100, reasoning: "off" },
+      tasks: [],
+    });
+    const scores = withOverallScores([summary(1, 1, 1), summary(0.5, 2, 2)]);
+
+    expect(scores[0]?.overallScore).toBeCloseTo(100);
+    expect(scores[1]?.overallScore).toBeCloseTo(50);
   });
 });

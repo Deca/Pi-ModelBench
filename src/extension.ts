@@ -4,10 +4,13 @@ import { join, resolve } from "node:path";
 import { resolveModelScopeWithDiagnostics, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Box, Text } from "@earendil-works/pi-tui";
 import { runBenchmark } from "./core/benchmark.js";
+import { runCodingBenchmark } from "./core/coding-benchmark.js";
+import { loadCodingPersonalProfile } from "./core/coding-fixtures.js";
 import { loadProfiles } from "./core/profiles.js";
+import { PiCodingModelRunner } from "./core/coding-runner.js";
 import { PiModelRunner } from "./core/pi-runner.js";
-import { renderComparisonTable, renderHtml } from "./core/report.js";
-import type { BenchmarkProfile, ThinkingLevel } from "./core/types.js";
+import { costPerBenchmarkRun, perfPerDollar, renderComparisonTable, renderHtml } from "./core/report.js";
+import type { BenchmarkProfile, CodingPersonalProfile, ThinkingLevel } from "./core/types.js";
 
 interface ParsedArgs {
   command: string;
@@ -53,6 +56,7 @@ function usage(): string {
     "Examples:",
     "  /benchmark coding --models openai/gpt-5.6,anthropic/claude-sonnet-4-5 --runs 2",
     "  /benchmark reasoning --models openai/gpt-5.6:high --format html",
+    "  /benchmark coding-personal --models openai/gpt-5.6 --runs 2",
   ].join("\n");
 }
 
@@ -62,19 +66,24 @@ function parseNumber(value: string | undefined, fallback: number, minimum: numbe
   return Number.isFinite(parsed) && parsed >= minimum ? parsed : fallback;
 }
 
-function profileWithOverrides(profile: BenchmarkProfile, args: ParsedArgs): BenchmarkProfile {
+function settingsWithOverrides(defaults: BenchmarkProfile["defaults"], args: ParsedArgs): BenchmarkProfile["defaults"] {
   const reasoning = args.values.get("thinking") as ThinkingLevel | undefined;
   const allowed: ThinkingLevel[] = ["off", "minimal", "low", "medium", "high", "xhigh", "max"];
   return {
-    ...profile,
-    defaults: {
-      ...profile.defaults,
-      runs: Math.floor(parseNumber(args.values.get("runs"), profile.defaults.runs, 1)),
-      maxTokens: Math.floor(parseNumber(args.values.get("max-tokens"), profile.defaults.maxTokens, 1)),
-      temperature: parseNumber(args.values.get("temperature"), profile.defaults.temperature, 0),
-      ...(reasoning && allowed.includes(reasoning) ? { reasoning } : {}),
-    },
+    ...defaults,
+    runs: Math.floor(parseNumber(args.values.get("runs"), defaults.runs, 1)),
+    maxTokens: Math.floor(parseNumber(args.values.get("max-tokens"), defaults.maxTokens, 1)),
+    temperature: parseNumber(args.values.get("temperature"), defaults.temperature, 0),
+    ...(reasoning && allowed.includes(reasoning) ? { reasoning } : {}),
   };
+}
+
+function profileWithOverrides(profile: BenchmarkProfile, args: ParsedArgs): BenchmarkProfile {
+  return { ...profile, defaults: settingsWithOverrides(profile.defaults, args) };
+}
+
+function codingProfileWithOverrides(profile: CodingPersonalProfile, args: ParsedArgs): CodingPersonalProfile {
+  return { ...profile, defaults: settingsWithOverrides(profile.defaults, args) };
 }
 
 async function saveResult(cwd: string, result: Awaited<ReturnType<typeof runBenchmark>>): Promise<{ jsonPath: string; htmlPath: string }> {
@@ -93,10 +102,14 @@ function formatSummary(result: Awaited<ReturnType<typeof runBenchmark>>): string
   return result.models.map((summary) => [
     `${summary.model.provider}/${summary.model.id} [thinking:${summary.settings?.reasoning ?? "unknown"}]`,
     `pass ${(summary.passRate * 100).toFixed(1)}%`,
+    `overall ${(summary.overallScore ?? 0).toFixed(1)}/100`,
     `score ${summary.meanScore.toFixed(2)}`,
     `stable ${summary.consistencyRate == null ? "N/A" : `${(summary.consistencyRate * 100).toFixed(1)}%`}`,
     `latency ${summary.meanLatencyMs.toFixed(0)}/${summary.p95LatencyMs.toFixed(0)}ms`,
+    `output ${summary.meanOutputTokens.toFixed(1)} tok/Q`,
     `output ${((summary.meanOutputTokensPerSecond ?? 0)).toFixed(1)} tok/s`,
+    `$/run $${costPerBenchmarkRun(summary).toFixed(2)}`,
+    `perf/$ ${perfPerDollar(summary)?.toFixed(1) ?? "N/A"}`,
     `cost ${summary.totalCost.toFixed(6)}`,
     `$/pass ${(summary.costPerSuccessfulAttempt ?? 0).toFixed(6)}`,
     `errors ${((summary.errorRate ?? 0) * 100).toFixed(1)}%`,
@@ -141,8 +154,14 @@ export default function modelbenchExtension(pi: ExtensionAPI) {
         return;
       }
       if (args.command === "profiles") {
-        const text = [...profiles.values()].map((profile) => `${profile.name} — ${profile.description} (${profile.tasks.length} tasks)`).join("\n");
-        ctx.ui.notify(text || "No benchmark profiles found.", "info");
+        const entries = [...profiles.values()].map((profile) => `${profile.name} — ${profile.description} (${profile.tasks.length} tasks)`);
+        try {
+          const codingProfile = loadCodingPersonalProfile(ctx.cwd);
+          entries.push(`${codingProfile.name} — ${codingProfile.description} (${codingProfile.tasks.length} tasks)`);
+        } catch {
+          // The coding-personal profile is optional for projects that only install text profiles.
+        }
+        ctx.ui.notify(entries.join("\n") || "No benchmark profiles found.", "info");
         return;
       }
       if (args.command === "models") {
@@ -159,10 +178,10 @@ export default function modelbenchExtension(pi: ExtensionAPI) {
         try {
           const result = JSON.parse(await readFile(path, "utf8")) as Awaited<ReturnType<typeof runBenchmark>>;
           const htmlPath = path.replace(/\.json$/i, ".html");
-          if (!existsSync(htmlPath)) await writeFile(htmlPath, renderHtml(result), "utf8");
+          await writeFile(htmlPath, renderHtml(result), "utf8");
           if (ctx.mode === "tui") {
             appendReportEntry(pi, {
-              title: `Benchmark ${result.profile.name}`,
+              title: result.profile.name.toLowerCase() === "simplebench" ? "SimpleBench" : `Benchmark ${result.profile.name}`,
               runId: result.runId,
               summary: renderComparisonTable(result.models, result.totalCost),
               jsonPath: path,
@@ -172,6 +191,57 @@ export default function modelbenchExtension(pi: ExtensionAPI) {
           } else ctx.ui.notify(formatSummary(result), "info");
         } catch (error) {
           ctx.ui.notify(`Could not read benchmark report: ${error instanceof Error ? error.message : String(error)}`, "error");
+        }
+        return;
+      }
+
+      if (args.command === "coding-personal") {
+        let codingProfile: CodingPersonalProfile;
+        try {
+          codingProfile = codingProfileWithOverrides(loadCodingPersonalProfile(ctx.cwd), args);
+        } catch (error) {
+          ctx.ui.notify(`Could not load coding-personal fixtures: ${error instanceof Error ? error.message : String(error)}`, "error");
+          return;
+        }
+        const requestedModels = args.values.get("models")?.split(",").map((value) => value.trim()).filter(Boolean) ?? [];
+        const modelPatterns = requestedModels.length > 0 ? requestedModels : (ctx.model ? [`${ctx.model.provider}/${ctx.model.id}`] : []);
+        if (modelPatterns.length === 0) {
+          ctx.ui.notify("Select a model first or pass --models provider/model.", "error");
+          return;
+        }
+        const resolved = await resolveModelScopeWithDiagnostics(modelPatterns, ctx.modelRegistry);
+        for (const diagnostic of resolved.diagnostics) ctx.ui.notify(diagnostic.message, "warning");
+        const targets = resolved.scopedModels.map((item) => ({
+          model: item.model,
+          settings: item.thinkingLevel && !args.values.has("thinking")
+            ? { ...codingProfile.defaults, reasoning: item.thinkingLevel }
+            : codingProfile.defaults,
+        }));
+        if (targets.length === 0) {
+          ctx.ui.notify("No requested models were found. Use /benchmark models to inspect the registry.", "error");
+          return;
+        }
+        ctx.ui.setStatus("modelbench", `benchmarking ${codingProfile.name}...`);
+        try {
+          const result = await runCodingBenchmark(codingProfile, targets, new PiCodingModelRunner(ctx.modelRegistry), (record, completed, total) => {
+            ctx.ui.setStatus("modelbench", `benchmarking ${codingProfile.name} ${completed}/${total}`);
+            if (record.error) ctx.ui.notify(`${record.model.provider}/${record.model.id} · ${record.taskId}: ${record.error}`, "warning");
+          });
+          const paths = await saveResult(ctx.cwd, result);
+          if (ctx.mode === "tui") {
+            appendReportEntry(pi, {
+              title: `Benchmark ${codingProfile.name}`,
+              runId: result.runId,
+              summary: renderComparisonTable(result.models, result.totalCost),
+              jsonPath: paths.jsonPath,
+              htmlPath: paths.htmlPath,
+            });
+          }
+          ctx.ui.notify(`Benchmark complete: ${result.runId}\nSaved: ${paths.jsonPath}\n${args.values.get("format") === "json" ? paths.jsonPath : paths.htmlPath}`, "info");
+        } catch (error) {
+          ctx.ui.notify(`Benchmark failed: ${error instanceof Error ? error.message : String(error)}`, "error");
+        } finally {
+          ctx.ui.setStatus("modelbench", undefined);
         }
         return;
       }

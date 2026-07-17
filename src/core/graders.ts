@@ -46,6 +46,13 @@ export function gradeOutput(output: string, grader: BenchmarkGrader): GradeResul
       const regex = new RegExp(grader.pattern, grader.flags);
       return regex.test(output) ? pass("Output matched the regular expression") : fail("Output did not match the regular expression");
     }
+    case "final-answer": {
+      const match = output.match(/Final Answer:\s*([A-F])/i);
+      const actual = match?.[1]?.toUpperCase();
+      return actual === grader.expected.toUpperCase()
+        ? pass("Final answer matched the expected choice")
+        : fail(actual ? `Expected final answer ${grader.expected}, got ${actual}` : "Output did not contain a valid final answer choice");
+    }
     case "json-exact": {
       try {
         return deepEqual(JSON.parse(output), grader.expected)

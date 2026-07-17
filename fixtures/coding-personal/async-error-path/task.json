@@ -1,0 +1,12 @@
+{
+  "id": "async-error-path",
+  "title": "Preserve the final retry error",
+  "prompt": "Fix the retry helper so it follows its documented contract: attempts must be a positive integer, the operation runs at most that many times, a successful result is returned immediately, and a failure after the final attempt rejects with the final error. Preserve the public API and add focused tests. Do not change files outside the repository.",
+  "tags": ["async", "error-handling", "testing"],
+  "difficulty": "hard",
+  "workingDirectory": "repository",
+  "verification": {
+    "command": "node --test ../verify/retry.test.js",
+    "timeoutMs": 120000
+  }
+}

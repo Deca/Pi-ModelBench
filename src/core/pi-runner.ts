@@ -4,7 +4,7 @@ import type { ModelRegistry } from "@earendil-works/pi-coding-agent";
 import { gradeOutput } from "./graders.js";
 import type { BenchmarkProfile, BenchmarkTask, ModelRef, ModelRunner, RunRecord } from "./types.js";
 
-function modelRef(model: Model<Api>): ModelRef {
+export function modelRef(model: Model<Api>): ModelRef {
   return {
     provider: model.provider,
     id: model.id,

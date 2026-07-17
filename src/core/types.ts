@@ -13,6 +13,7 @@ export type BenchmarkGrader =
   | { type: "normalized-exact"; expected: string }
   | { type: "contains"; values: string[] }
   | { type: "regex"; pattern: string; flags?: string }
+  | { type: "final-answer"; expected: string }
   | { type: "json-exact"; expected: unknown }
   | { type: "json-fields"; fields: Record<string, unknown> }
   | { type: "number"; expected: number; tolerance: number }
@@ -25,16 +26,51 @@ export interface BenchmarkTask {
   tags?: string[];
 }
 
+export interface BenchmarkSettings {
+  runs: number;
+  temperature: number;
+  maxTokens: number;
+  reasoning: ThinkingLevel;
+}
+
+export type BenchmarkRequestSettings = Omit<BenchmarkSettings, "runs">;
+
 export interface BenchmarkProfile {
   name: string;
   description: string;
-  defaults: {
-    runs: number;
-    temperature: number;
-    maxTokens: number;
-    reasoning: ThinkingLevel;
-  };
+  defaults: BenchmarkSettings;
   tasks: BenchmarkTask[];
+}
+
+export type CodingTaskDifficulty = "easy" | "medium" | "hard";
+
+export interface CodingVerification {
+  command: string;
+  timeoutMs: number;
+}
+
+export interface CodingTaskDefinition {
+  id: string;
+  title: string;
+  prompt: string;
+  tags: string[];
+  difficulty: CodingTaskDifficulty;
+  workingDirectory: string;
+  verification: CodingVerification;
+}
+
+export interface CodingPersonalTask extends CodingTaskDefinition {
+  fixtureDirectory: string;
+  repositoryDirectory: string;
+  verificationDirectory: string;
+}
+
+export interface CodingPersonalProfile {
+  kind: "coding-personal";
+  name: "coding-personal";
+  description: string;
+  defaults: BenchmarkSettings;
+  tasks: CodingPersonalTask[];
 }
 
 export interface BenchmarkTarget {
@@ -60,11 +96,7 @@ export interface RunRecord {
   taskTags: string[];
   attempt: number;
   model: ModelRef;
-  settings: {
-    temperature: number;
-    maxTokens: number;
-    reasoning: ThinkingLevel;
-  };
+  settings: BenchmarkRequestSettings;
   prompt: string;
   output: string;
   grade: {
@@ -76,6 +108,34 @@ export interface RunRecord {
   usage: Usage;
   stopReason: string;
   error?: string;
+}
+
+export interface CodingVerificationResult {
+  exitCode: number | null;
+  signal: string | null;
+  stdout: string;
+  stderr: string;
+  durationMs: number;
+  timedOut: boolean;
+  testsPassed: number | null;
+  testsTotal: number | null;
+  error?: string;
+}
+
+export type CodingFailureCategory = "none" | "agent" | "verification" | "verification-timeout" | "runner";
+
+export interface CodingAttemptDetails {
+  verification: CodingVerificationResult;
+  failureCategory: CodingFailureCategory;
+  toolTurns: number;
+  changedFiles: string[];
+  outsideScopeFiles: string[];
+  diff: string;
+  messages: unknown[];
+}
+
+export interface CodingRunRecord extends RunRecord {
+  coding: CodingAttemptDetails;
 }
 
 export interface MetricSummary {
@@ -94,6 +154,8 @@ export interface MetricSummary {
   costPerSuccessfulAttempt: number;
   consistencyRate: number | null;
   errorRate: number;
+  verificationTestsPassed?: number;
+  verificationTestsTotal?: number;
 }
 
 export interface TaskSummary extends MetricSummary {
@@ -102,12 +164,14 @@ export interface TaskSummary extends MetricSummary {
 }
 
 export interface ModelSummary extends MetricSummary {
+  /** Relative comparison score for this run; not comparable across runs. */
+  overallScore?: number;
   model: ModelRef;
   settings: BenchmarkProfile["defaults"];
   tasks: TaskSummary[];
 }
 
-export interface BenchmarkResult {
+export interface BenchmarkResult<TRecord extends RunRecord = RunRecord> {
   schemaVersion: 1;
   runId: string;
   startedAt: string;
@@ -116,9 +180,13 @@ export interface BenchmarkResult {
   settings: BenchmarkProfile["defaults"];
   totalCost: number;
   models: ModelSummary[];
-  records: RunRecord[];
+  records: TRecord[];
 }
 
 export interface ModelRunner {
   run(model: Model<Api>, task: BenchmarkTask, settings: BenchmarkProfile["defaults"]): Promise<RunRecord>;
+}
+
+export interface CodingModelRunner {
+  run(model: Model<Api>, task: CodingPersonalTask, settings: BenchmarkSettings): Promise<CodingRunRecord>;
 }

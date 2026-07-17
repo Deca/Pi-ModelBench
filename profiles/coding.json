@@ -1,6 +1,6 @@
 {
   "name": "coding",
-  "description": "Small, tool-free software-engineering tasks focused on instruction following, correctness, and concise technical communication.",
+  "description": "Tool-free software-engineering tasks focused on algorithms, debugging, language semantics, API design, testing judgment, and instruction following.",
   "defaults": { "runs": 3, "temperature": 0, "maxTokens": 512, "reasoning": "low" },
   "tasks": [
     {
@@ -26,6 +26,30 @@
       "tags": ["instruction-following"],
       "prompt": "Explain in one sentence why a unit test should not depend on the system clock. Your answer must contain the words `deterministic` and `reliable`.",
       "grader": { "type": "contains", "values": ["deterministic", "reliable"] }
+    },
+    {
+      "id": "loop-trace",
+      "tags": ["algorithms", "state-tracing", "exactness"],
+      "prompt": "Return only the integer value. Start with `value = 7`. For i from 1 through 5, if i is odd add i*3 to value; otherwise divide value by 2. What is value after the loop?",
+      "grader": { "type": "number", "expected": 22, "tolerance": 0 }
+    },
+    {
+      "id": "js-coercion",
+      "tags": ["language-semantics", "structured-output", "exactness"],
+      "prompt": "Return JSON only. Evaluate these JavaScript expressions in order and return their string results: `\"\" || \"fallback\"`, `0 || \"fallback\"`, `false || \"fallback\"`, `null || \"fallback\"`, and `\"ok\" || \"fallback\"`.",
+      "grader": { "type": "json-exact", "expected": ["fallback", "fallback", "fallback", "fallback", "ok"] }
+    },
+    {
+      "id": "test-boundaries",
+      "tags": ["testing", "boundaries", "structured-output"],
+      "prompt": "An API accepts an inclusive integer range from 0 through 10. Return JSON only: the four smallest useful boundary test inputs, in ascending order, covering just below, the lower bound, the upper bound, and just above.",
+      "grader": { "type": "json-exact", "expected": [-1, 0, 10, 11] }
+    },
+    {
+      "id": "api-evolution",
+      "tags": ["api", "backward-compatibility", "structured-output"],
+      "prompt": "Return JSON only with exactly two string fields: `breaking` and `reason`. A server adds an optional response field that old clients ignore. Set `breaking` to `false` and explain why this change is backward compatible in one short phrase.",
+      "grader": { "type": "json-exact", "expected": { "breaking": "false", "reason": "optional response fields are backward compatible" } }
     }
   ]
 }

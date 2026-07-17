@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { renderHtml } from "../src/core/report.js";
-import type { BenchmarkResult } from "../src/core/types.js";
+import type { BenchmarkResult, CodingRunRecord } from "../src/core/types.js";
 
 const result: BenchmarkResult = {
   schemaVersion: 1,
@@ -73,7 +73,47 @@ describe("renderHtml", () => {
     expect(html).toContain("<!doctype html>");
     expect(html).toContain("Configuration comparison");
     expect(html).toContain("Output tok/s");
+    expect(html).toContain("Out tok/Q");
+    expect(html).toContain("$/run");
+    expect(html).toContain("Perf/$");
+    expect(html).toContain("<th>Tests</th>");
     expect(html).toContain("Per-task capability and precision");
     expect(html).toContain("answer");
+
+    const simpleBenchHtml = renderHtml({ ...result, profile: { ...result.profile, name: "simplebench" } });
+    expect(simpleBenchHtml).toContain("<h1>SimpleBench</h1>");
+    expect(simpleBenchHtml).not.toContain("ModelBench: simplebench");
+  });
+
+  it("keeps the task summary as the full-width expandable row", () => {
+    const html = renderHtml(result);
+
+    expect(html).toContain("details.task-row > summary, .task-header { display:grid; grid-template-columns:var(--task-columns);");
+    expect(html).toContain(".task-list { min-width:1050px; --task-columns:");
+    expect(html).not.toContain(".task-row { display:grid;");
+    expect(html).toContain('<summary><span>C1</span><span>task</span>');
+    expect(html).toContain('<div class="task-attempts"><details class="attempt">');
+  });
+
+  it("renders coding verification and changed-file evidence", () => {
+    const record = result.records[0];
+    if (!record) throw new Error("test record missing");
+    const codingRecord: CodingRunRecord = {
+      ...record,
+      coding: {
+        verification: { exitCode: 0, signal: null, stdout: "tests passed", stderr: "", durationMs: 12, timedOut: false, testsPassed: 1, testsTotal: 1 },
+        failureCategory: "none",
+        toolTurns: 3,
+        changedFiles: ["src/paginator.js"],
+        outsideScopeFiles: [],
+        diff: "diff summary",
+        messages: [{ role: "assistant" }],
+      },
+    };
+    const html = renderHtml({ ...result, records: [codingRecord] });
+
+    expect(html).toContain("Verification stdout");
+    expect(html).toContain("src/paginator.js");
+    expect(html).toContain("Raw agent messages");
   });
 });

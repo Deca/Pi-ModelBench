@@ -10,11 +10,15 @@ function parseProfile(path: string): BenchmarkProfile {
 }
 
 export function loadProfiles(cwd: string): Map<string, BenchmarkProfile> {
-  const directories = [fileURLToPath(new URL("../../profiles/", import.meta.url)), join(cwd, ".pi", "modelbench", "profiles")];
+  const bundledDirectories = [
+    fileURLToPath(new URL("../../profiles/", import.meta.url)),
+    fileURLToPath(new URL("../../../profiles/", import.meta.url)),
+  ];
+  const directories = [...bundledDirectories, join(cwd, ".pi", "modelbench", "profiles")];
   const profiles = new Map<string, BenchmarkProfile>();
   for (const directory of directories) {
     if (!existsSync(directory)) continue;
-    for (const filename of readdirSync(directory).filter((file) => file.endsWith(".json"))) {
+    for (const filename of readdirSync(directory).filter((file) => file.endsWith(".json") && file !== "coding-personal.json")) {
       const profile = parseProfile(join(directory, filename));
       profiles.set(profile.name, profile);
     }
