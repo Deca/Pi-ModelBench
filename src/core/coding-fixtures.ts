@@ -3,8 +3,8 @@ import { fileURLToPath } from "node:url";
 import { isAbsolute, join, normalize, relative } from "node:path";
 import type {
   BenchmarkSettings,
-  CodingPersonalProfile,
-  CodingPersonalTask,
+  CodingAgentProfile,
+  CodingAgentTask,
   CodingTaskDefinition,
   CodingTaskDifficulty,
 } from "./types.js";
@@ -86,44 +86,44 @@ function bundledPath(directory: "profiles" | "fixtures"): string[] {
   return [currentPackagePath, sourcePackagePath];
 }
 
-function parseProfileMetadata(path: string): Omit<CodingPersonalProfile, "tasks"> {
+function parseProfileMetadata(path: string): Omit<CodingAgentProfile, "tasks"> {
   const value: unknown = JSON.parse(readFileSync(path, "utf8"));
-  if (!isRecord(value)) throw new Error(`Invalid coding-personal profile: ${path}`);
+  if (!isRecord(value)) throw new Error(`Invalid coding-agent profile: ${path}`);
   const name = requiredString(value.name, "name", path);
-  if (name !== "coding-personal") throw new Error(`Invalid ${path}: name must be coding-personal`);
+  if (name !== "coding-agent") throw new Error(`Invalid ${path}: name must be coding-agent`);
   return {
-    kind: "coding-personal",
-    name: "coding-personal",
+    kind: "coding-agent",
+    name: "coding-agent",
     description: requiredString(value.description, "description", path),
     defaults: parseSettings(value.defaults, path),
   };
 }
 
-/** Load the coding-personal metadata and every self-contained fixture task. */
-export function loadCodingPersonalProfile(cwd: string): CodingPersonalProfile {
-  const profilePath = existsSync(join(cwd, ".pi", "modelbench", "profiles", "coding-personal.json"))
-    ? join(cwd, ".pi", "modelbench", "profiles", "coding-personal.json")
-    : bundledPath("profiles").map((directory) => join(directory, "coding-personal.json")).find((path) => existsSync(path));
-  if (!profilePath) throw new Error("Could not find coding-personal profile metadata");
+/** Load the coding-agent metadata and every self-contained fixture task. */
+export function loadCodingAgentProfile(cwd: string): CodingAgentProfile {
+  const profilePath = existsSync(join(cwd, ".pi", "modelbench", "profiles", "coding-agent.json"))
+    ? join(cwd, ".pi", "modelbench", "profiles", "coding-agent.json")
+    : bundledPath("profiles").map((directory) => join(directory, "coding-agent.json")).find((path) => existsSync(path));
+  if (!profilePath) throw new Error("Could not find coding-agent profile metadata");
 
   const fixtureRoot = existingDirectory([
-    join(cwd, "fixtures", "coding-personal"),
-    ...bundledPath("fixtures").map((directory) => join(directory, "coding-personal")),
+    join(cwd, "fixtures", "coding-agent"),
+    ...bundledPath("fixtures").map((directory) => join(directory, "coding-agent")),
   ]);
-  if (!fixtureRoot) throw new Error(`Could not find coding-personal fixtures under ${cwd}`);
+  if (!fixtureRoot) throw new Error(`Could not find coding-agent fixtures under ${cwd}`);
 
   const taskDirectories = readdirSync(fixtureRoot, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .sort((left, right) => left.name.localeCompare(right.name));
-  if (taskDirectories.length === 0) throw new Error(`No coding-personal task fixtures found in ${fixtureRoot}`);
+  if (taskDirectories.length === 0) throw new Error(`No coding-agent task fixtures found in ${fixtureRoot}`);
   const ids = new Set<string>();
-  const tasks: CodingPersonalTask[] = taskDirectories.map((entry) => {
+  const tasks: CodingAgentTask[] = taskDirectories.map((entry) => {
     const fixtureDirectory = join(fixtureRoot, entry.name);
     const taskPath = join(fixtureDirectory, "task.json");
     if (!existsSync(taskPath)) throw new Error(`Missing task.json in ${fixtureDirectory}`);
     const task = validateCodingTask(JSON.parse(readFileSync(taskPath, "utf8")), taskPath);
     if (task.id !== entry.name) throw new Error(`Invalid ${taskPath}: id must match fixture directory name (${entry.name})`);
-    if (ids.has(task.id)) throw new Error(`Duplicate coding-personal task id: ${task.id}`);
+    if (ids.has(task.id)) throw new Error(`Duplicate coding-agent task id: ${task.id}`);
     ids.add(task.id);
 
     const repositoryDirectory = join(fixtureDirectory, "repository");

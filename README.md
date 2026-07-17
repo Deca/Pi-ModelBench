@@ -113,7 +113,7 @@ For example:
 
 ```text
 /benchmark coding --models openai/gpt-5.6,anthropic/claude-sonnet-4-5 --runs 3
-/benchmark coding-personal --models openai/gpt-5.6 --runs 2
+/benchmark coding-agent --models openai/gpt-5.6 --runs 2
 ```
 
 If `--models` is omitted ModelBench benchmarks the model currently selected in Pi:
@@ -166,7 +166,7 @@ Eight tool-free software-engineering tasks designed to separate models on:
 - API contracts and backward compatibility;
 - boundary-test selection and instruction following.
 
-### `coding-personal`
+### `coding-agent`
 
 Three isolated repository tasks covering pagination edge cases, strict configuration validation, and asynchronous retry error paths. Each task receives a fresh fixture copy, the Pi coding tools (`read`, `bash`, `edit`, and `write`), and an external verification command. Results retain changed files, diff summaries, verification output, tool-turn counts, and raw agent messages.
 

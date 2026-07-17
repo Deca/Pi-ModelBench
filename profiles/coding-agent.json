@@ -1,5 +1,5 @@
 {
-  "name": "coding-personal",
+  "name": "coding-agent",
   "description": "Isolated coding tasks drawn from real software-development work.",
   "defaults": {
     "runs": 1,

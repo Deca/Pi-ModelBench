@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { performance } from "node:perf_hooks";
-import type { CodingPersonalTask, CodingVerification } from "./types.js";
+import type { CodingAgentTask, CodingVerification } from "./types.js";
 
 export interface VerificationResult {
   exitCode: number | null;
@@ -132,7 +132,7 @@ export function executeVerification(verification: CodingVerification, workingDir
 }
 
 /** Copy a fixture into a temporary directory, run a callback, and always remove it. */
-export async function withIsolatedCodingWorkspace<T>(task: CodingPersonalTask, callback: CodingWorkspaceRunner<T>): Promise<T> {
+export async function withIsolatedCodingWorkspace<T>(task: CodingAgentTask, callback: CodingWorkspaceRunner<T>): Promise<T> {
   const workspaceDirectory = await mkdtemp(join(tmpdir(), "modelbench-coding-"));
   const workspace = {
     workspaceDirectory,
@@ -151,7 +151,7 @@ export async function withIsolatedCodingWorkspace<T>(task: CodingPersonalTask, c
 }
 
 /** Copy a fixture into a temporary directory, run verification, and always remove it. */
-export async function runIsolatedCodingTask(task: CodingPersonalTask, verificationRunner: VerificationRunner = executeVerification): Promise<IsolatedCodingResult> {
+export async function runIsolatedCodingTask(task: CodingAgentTask, verificationRunner: VerificationRunner = executeVerification): Promise<IsolatedCodingResult> {
   return withIsolatedCodingWorkspace(task, async (workspace) => ({
     ...workspace,
     verification: await verificationRunner(task.verification, workspace.workingDirectory),

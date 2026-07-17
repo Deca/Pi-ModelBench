@@ -18,7 +18,7 @@ export function loadProfiles(cwd: string): Map<string, BenchmarkProfile> {
   const profiles = new Map<string, BenchmarkProfile>();
   for (const directory of directories) {
     if (!existsSync(directory)) continue;
-    for (const filename of readdirSync(directory).filter((file) => file.endsWith(".json") && file !== "coding-personal.json")) {
+    for (const filename of readdirSync(directory).filter((file) => file.endsWith(".json") && file !== "coding-agent.json")) {
       const profile = parseProfile(join(directory, filename));
       profiles.set(profile.name, profile);
     }

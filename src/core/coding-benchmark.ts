@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { summarizeRecords, summarizeTaskRecords, withOverallScores } from "./statistics.js";
-import type { BenchmarkResult, BenchmarkTarget, CodingModelRunner, CodingPersonalProfile, CodingRunRecord, ModelSummary, RunRecord } from "./types.js";
+import type { BenchmarkResult, BenchmarkTarget, CodingModelRunner, CodingAgentProfile, CodingRunRecord, ModelSummary, RunRecord } from "./types.js";
 
 function sameConfiguration(record: RunRecord, target: BenchmarkTarget): boolean {
   return record.model.provider === target.model.provider
@@ -31,7 +31,7 @@ function modelSummary(records: RunRecord[], target: BenchmarkTarget): ModelSumma
 
 /** Run isolated coding tasks sequentially against independent model configurations. */
 export async function runCodingBenchmark(
-  profile: CodingPersonalProfile,
+  profile: CodingAgentProfile,
   targets: BenchmarkTarget[],
   runner: CodingModelRunner,
   onRecord?: (record: CodingRunRecord, completed: number, total: number) => void,

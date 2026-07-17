@@ -2,13 +2,13 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { loadCodingPersonalProfile, validateCodingTask } from "../src/core/coding-fixtures.js";
+import { loadCodingAgentProfile, validateCodingTask } from "../src/core/coding-fixtures.js";
 
-describe("coding-personal fixtures", () => {
+describe("coding-agent fixtures", () => {
   it("loads the bundled task and preserves its fixture paths", () => {
-    const profile = loadCodingPersonalProfile(process.cwd());
+    const profile = loadCodingAgentProfile(process.cwd());
 
-    expect(profile.name).toBe("coding-personal");
+    expect(profile.name).toBe("coding-agent");
     expect(profile.tasks.map((task) => task.id)).toEqual(["async-error-path", "bug-edge-case", "validation-matrix"]);
     const task = profile.tasks.find((candidate) => candidate.id === "bug-edge-case");
     if (!task) throw new Error("bug-edge-case fixture missing");
@@ -28,7 +28,7 @@ describe("coding-personal fixtures", () => {
 
   it("rejects a fixture that omits its verification directory", () => {
     const root = mkdtempSync(join(tmpdir(), "modelbench-fixture-"));
-    const taskDirectory = join(root, "fixtures", "coding-personal", "broken-task");
+    const taskDirectory = join(root, "fixtures", "coding-agent", "broken-task");
     mkdirSync(join(taskDirectory, "repository"), { recursive: true });
     writeFileSync(join(taskDirectory, "task.json"), JSON.stringify({
       id: "broken-task",
@@ -41,7 +41,7 @@ describe("coding-personal fixtures", () => {
     }));
 
     try {
-      expect(() => loadCodingPersonalProfile(root)).toThrow(/Missing verify directory/);
+      expect(() => loadCodingAgentProfile(root)).toThrow(/Missing verify directory/);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

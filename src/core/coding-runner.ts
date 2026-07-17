@@ -3,7 +3,7 @@ import type { Api, AssistantMessage, Model, Usage } from "@earendil-works/pi-ai"
 import { performance } from "node:perf_hooks";
 import { executeVerification, snapshotFiles, summarizeFileChanges, withIsolatedCodingWorkspace, type VerificationResult } from "./coding-workspace.js";
 import { modelRef } from "./pi-runner.js";
-import type { BenchmarkSettings, CodingFailureCategory, CodingModelRunner, CodingPersonalTask, CodingRunRecord, CodingVerificationResult } from "./types.js";
+import type { BenchmarkSettings, CodingAgentTask, CodingFailureCategory, CodingModelRunner, CodingRunRecord, CodingVerificationResult } from "./types.js";
 
 const zeroUsage = (): Usage => ({
   input: 0,
@@ -58,7 +58,7 @@ function codingVerification(result: VerificationResult): CodingVerificationResul
   return result;
 }
 
-function failedCodingRecord(model: Model<Api>, task: CodingPersonalTask, settings: BenchmarkSettings, startedAt: Date, latencyMs: number, error: string): CodingRunRecord {
+function failedCodingRecord(model: Model<Api>, task: CodingAgentTask, settings: BenchmarkSettings, startedAt: Date, latencyMs: number, error: string): CodingRunRecord {
   return {
     runId: "",
     startedAt: startedAt.toISOString(),
@@ -99,7 +99,7 @@ interface AgentExecution {
 export class PiCodingModelRunner implements CodingModelRunner {
   public constructor(private readonly modelRegistry: ModelRegistry) {}
 
-  private async runAgent(model: Model<Api>, task: CodingPersonalTask, settings: BenchmarkSettings, workingDirectory: string): Promise<AgentExecution> {
+  private async runAgent(model: Model<Api>, task: CodingAgentTask, settings: BenchmarkSettings, workingDirectory: string): Promise<AgentExecution> {
     let toolTurns = 0;
     const { session } = await createAgentSession({
       cwd: workingDirectory,
@@ -133,7 +133,7 @@ export class PiCodingModelRunner implements CodingModelRunner {
     }
   }
 
-  async run(model: Model<Api>, task: CodingPersonalTask, settings: BenchmarkSettings): Promise<CodingRunRecord> {
+  async run(model: Model<Api>, task: CodingAgentTask, settings: BenchmarkSettings): Promise<CodingRunRecord> {
     const startedAt = new Date();
     const start = performance.now();
     try {

@@ -1,9 +1,9 @@
 import { existsSync, writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { loadCodingPersonalProfile } from "../src/core/coding-fixtures.js";
+import { loadCodingAgentProfile } from "../src/core/coding-fixtures.js";
 import { parseTestCounts, runIsolatedCodingTask, type VerificationResult } from "../src/core/coding-workspace.js";
 
-const task = loadCodingPersonalProfile(process.cwd()).tasks.find((candidate) => candidate.id === "bug-edge-case");
+const task = loadCodingAgentProfile(process.cwd()).tasks.find((candidate) => candidate.id === "bug-edge-case");
 
 const passingVerification: VerificationResult = {
   exitCode: 0,

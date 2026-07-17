@@ -59,18 +59,18 @@ export interface CodingTaskDefinition {
   verification: CodingVerification;
 }
 
-export interface CodingPersonalTask extends CodingTaskDefinition {
+export interface CodingAgentTask extends CodingTaskDefinition {
   fixtureDirectory: string;
   repositoryDirectory: string;
   verificationDirectory: string;
 }
 
-export interface CodingPersonalProfile {
-  kind: "coding-personal";
-  name: "coding-personal";
+export interface CodingAgentProfile {
+  kind: "coding-agent";
+  name: "coding-agent";
   description: string;
   defaults: BenchmarkSettings;
-  tasks: CodingPersonalTask[];
+  tasks: CodingAgentTask[];
 }
 
 export interface BenchmarkTarget {
@@ -188,5 +188,5 @@ export interface ModelRunner {
 }
 
 export interface CodingModelRunner {
-  run(model: Model<Api>, task: CodingPersonalTask, settings: BenchmarkSettings): Promise<CodingRunRecord>;
+  run(model: Model<Api>, task: CodingAgentTask, settings: BenchmarkSettings): Promise<CodingRunRecord>;
 }

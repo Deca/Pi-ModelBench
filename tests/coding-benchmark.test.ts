@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { Api, Model } from "@earendil-works/pi-ai";
-import { loadCodingPersonalProfile } from "../src/core/coding-fixtures.js";
+import { loadCodingAgentProfile } from "../src/core/coding-fixtures.js";
 import { runCodingBenchmark } from "../src/core/coding-benchmark.js";
 import type { CodingModelRunner, CodingRunRecord } from "../src/core/types.js";
 
 const model = { provider: "fake", id: "coding-model", api: "fake", name: "Coding Model", contextWindow: 1000, maxTokens: 100, reasoning: false, input: ["text"], baseUrl: "fake", cost: { input: 1, output: 2, cacheRead: 0, cacheWrite: 0 } } as Model<Api>;
-const loadedProfile = loadCodingPersonalProfile(process.cwd());
+const loadedProfile = loadCodingAgentProfile(process.cwd());
 const profile = {
   ...loadedProfile,
   tasks: loadedProfile.tasks.filter((task) => task.id === "bug-edge-case"),

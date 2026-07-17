@@ -5,12 +5,12 @@ import { resolveModelScopeWithDiagnostics, type ExtensionAPI, type ExtensionCont
 import { Box, Text } from "@earendil-works/pi-tui";
 import { runBenchmark } from "./core/benchmark.js";
 import { runCodingBenchmark } from "./core/coding-benchmark.js";
-import { loadCodingPersonalProfile } from "./core/coding-fixtures.js";
+import { loadCodingAgentProfile } from "./core/coding-fixtures.js";
 import { loadProfiles } from "./core/profiles.js";
 import { PiCodingModelRunner } from "./core/coding-runner.js";
 import { PiModelRunner } from "./core/pi-runner.js";
 import { costPerBenchmarkRun, perfPerDollar, renderComparisonTable, renderHtml } from "./core/report.js";
-import type { BenchmarkProfile, CodingPersonalProfile, ThinkingLevel } from "./core/types.js";
+import type { BenchmarkProfile, CodingAgentProfile, ThinkingLevel } from "./core/types.js";
 
 interface ParsedArgs {
   command: string;
@@ -56,7 +56,7 @@ function usage(): string {
     "Examples:",
     "  /benchmark coding --models openai/gpt-5.6,anthropic/claude-sonnet-4-5 --runs 2",
     "  /benchmark reasoning --models openai/gpt-5.6:high --format html",
-    "  /benchmark coding-personal --models openai/gpt-5.6 --runs 2",
+    "  /benchmark coding-agent --models openai/gpt-5.6 --runs 2",
   ].join("\n");
 }
 
@@ -82,7 +82,7 @@ function profileWithOverrides(profile: BenchmarkProfile, args: ParsedArgs): Benc
   return { ...profile, defaults: settingsWithOverrides(profile.defaults, args) };
 }
 
-function codingProfileWithOverrides(profile: CodingPersonalProfile, args: ParsedArgs): CodingPersonalProfile {
+function codingProfileWithOverrides(profile: CodingAgentProfile, args: ParsedArgs): CodingAgentProfile {
   return { ...profile, defaults: settingsWithOverrides(profile.defaults, args) };
 }
 
@@ -156,10 +156,10 @@ export default function modelbenchExtension(pi: ExtensionAPI) {
       if (args.command === "profiles") {
         const entries = [...profiles.values()].map((profile) => `${profile.name} — ${profile.description} (${profile.tasks.length} tasks)`);
         try {
-          const codingProfile = loadCodingPersonalProfile(ctx.cwd);
+          const codingProfile = loadCodingAgentProfile(ctx.cwd);
           entries.push(`${codingProfile.name} — ${codingProfile.description} (${codingProfile.tasks.length} tasks)`);
         } catch {
-          // The coding-personal profile is optional for projects that only install text profiles.
+          // The coding-agent profile is optional for projects that only install text profiles.
         }
         ctx.ui.notify(entries.join("\n") || "No benchmark profiles found.", "info");
         return;
@@ -195,12 +195,12 @@ export default function modelbenchExtension(pi: ExtensionAPI) {
         return;
       }
 
-      if (args.command === "coding-personal") {
-        let codingProfile: CodingPersonalProfile;
+      if (args.command === "coding-agent") {
+        let codingProfile: CodingAgentProfile;
         try {
-          codingProfile = codingProfileWithOverrides(loadCodingPersonalProfile(ctx.cwd), args);
+          codingProfile = codingProfileWithOverrides(loadCodingAgentProfile(ctx.cwd), args);
         } catch (error) {
-          ctx.ui.notify(`Could not load coding-personal fixtures: ${error instanceof Error ? error.message : String(error)}`, "error");
+          ctx.ui.notify(`Could not load coding-agent fixtures: ${error instanceof Error ? error.message : String(error)}`, "error");
           return;
         }
         const requestedModels = args.values.get("models")?.split(",").map((value) => value.trim()).filter(Boolean) ?? [];
